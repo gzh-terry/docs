@@ -12,9 +12,25 @@ openvela is an operating system specifically crafted for the AIoT industry, with
 
 The name "Vela" is originated from the Latin term for "sail," which is also the name of the constellation resembling a sail in the southern sky. We aspire to partner with developers and set sail on a voyage through the AIoT landscape.
 
+## Technical Architecture
+
+![img](images/002.png)
+
+- **Kernel Layer**
+
+    The kernel layer provides fundamental operating system functions, including task scheduling, inter-process communication (IPC), and file system management. It also supplies compact, efficient components such as device drivers, a lightweight TCP/IP protocol stack, and power management modules. This layer supports both homogeneous and heterogeneous multi-core architectures, enhancing performance support across diverse hardware platforms.
+
+- **Service Framework Layer**
+
+    The service framework layer is a general-purpose framework designed to extend system services. It includes connectivity subsystem, graphics subsystem, multimedia subsystem, security subsystem, and XPC cross-core communication capabilities. This layer provides flexible support for service expansion, serving as the essential foundation for system functional expansion.
+
+- **Maintenance and Testing Tools**
+
+    Maintenance and testing tools include common utilities and diagnostic frameworks. In addition to standard tools like Logger and Debugger, they feature the Emulator — a high-fidelity device simulator that supports full functional emulation, including CPU instruction-set simulation.  The Emulator currently supports multiple product form factors, including smart panels, smartwatches, smart bands, and smart screen speakers. By leveraging the Emulator’s PC-based debugging tools, developers can perform application development and testing without physical devices, significantly reducing both development and debugging efforts.
+
 ## Technical advantages
 
-- **Highly Scalable**: openvela has been designed to be modular and scalable, allowing it to easily adapt to a wide range of IoT applications. It can fit in a small BLE module with 8KB RAM, and scale up to a powerful smart display device with 512MB RAM, highly scalable!
+- **Highly Scalable**: openvela has been designed to be modular and scalable, allowing it to easily adapt to a wide range of IoT applications. It can fit in a small BLE module with 32KB RAM, and scale up to a powerful smart display device with 512MB RAM, highly scalable!
 
 - **One-Stop Solution**: Over the years, openvela has evolved into a powerful platform with comprehensive feature sets, making it a one-stop solution for various IoT applications. We consistently incorporate new functionalities to meet emerging needs. By leveraging openvela, manufacturers can significantly reduce their R&D costs and accelerate their product development cycles.
 
@@ -28,7 +44,9 @@ The name "Vela" is originated from the Latin term for "sail," which is also the 
 
 ## Supported platforms
 
-openvela supports a variety of architectures (ARM32, ARM64, RISC-V, Xtensa, MIPS, CEVA, etc.) and platforms. See the full list on the [Supported Architectures and Platforms](https://nuttx.apache.org/docs/latest/platforms/index.html) page.
+- openvela supports a variety of architectures (ARM32, ARM64, RISC-V, Xtensa, MIPS, CEVA, etc.) and platforms.
+- Please refer to the [Supported Architectures and Platforms](https://nuttx.apache.org/docs/latest/platforms/index.html) page for a complete list.
+- For adaptation cases regarding development boards, please refer to the [Case Documentation](./en/dev_board/STM32H750.md).
 
 ## Quick start
 
@@ -37,21 +55,25 @@ If you want to experience openvela, we provide a fully functional emulator that 
 1. [Set up the development environment](./en/quickstart/Set_up_the_development_environment.md)
 2. [Download openvela source code](./en/quickstart/Download_Vela_sources.md)
 3. [Compile openvela source code](./en/quickstart/Build_Vela_from_sources.md)
-4. [Run build artifacts on openvela Emulator](./en/quickstart/Run_Vela_on_Vela_Emulator.md)
+4. [Run build artifacts on Emulator](./en/quickstart/Run_Vela_on_Vela_Emulator.md)
 
 ## Sub-repository List  
 
-| Sub-repository Link                                         | Description                                                  |  
-| :--------------------------------------------------------- | :--------------------------------------------------------- |  
-| [frameworks](../../../../open-vela/frameworks)            | openvela service framework: primarily includes Bluetooth, telephony, graphics, multimedia, application frameworks, security, and system service frameworks (KVDB, OTA, healthd, binder, charger, etc.). |  
-| [vendor](../../../../open-vela/vendor)                    | Drivers and frameworks provided by the original chip manufacturers.      |  
-| [nuttx](../../../../open-vela/nuttx)                      | A kernel built on the open-source real-time operating system NuttX, providing essential kernel functions, including task scheduling, inter-process communication, file systems, TCP/IP stack, device drivers, and power management, while offering a standard POSIX interface. For more information about the NuttX operating system, you can visit the [Apache NuttX](https://nuttx.apache.org/) official website. |
-| [apps](../../../../open-vela/apps)                        | `apps` is the application library for the open-source real-time operating system (NuttX), containing a series of applications and utilities designed for NuttX RTOS. These applications and tools include shell command-line tools, file system tools, network tools, etc., which can help developers develop and debug embedded systems based on NuttX RTOS more conveniently.   |  
-| [external](../../../../open-vela/external)                | Third-party libraries introduced by openvela.             |  
-| [tests](../../../../open-vela/tests)                      | This repository contains interface tests, specifically including core API tests for multimedia, file systems, memory management, and socket communication. |  
-| [docs](../../../../open-vela/docs)                        | Developer documentation for openvela.        |
+| Sub-repository Link                            | Description                                                                                                                                                                                                                                                                                                                                                                                                         |
+| :--------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [frameworks](../../../../open-vela/frameworks) | openvela service framework: primarily includes Bluetooth, telephony, graphics, multimedia, application frameworks, security, and system service frameworks (KVDB, OTA, healthd, binder, charger, etc.).                                                                                                                                                                                                             |
+| [vendor](../../../../open-vela/vendor)         | Drivers and frameworks provided by the original chip manufacturers.                                                                                                                                                                                                                                                                                                                                                 |
+| [nuttx](../../../../open-vela/nuttx)           | A kernel built on the open-source real-time operating system NuttX, providing essential kernel functions, including task scheduling, inter-process communication, file systems, TCP/IP stack, device drivers, and power management, while offering a standard POSIX interface. For more information about the NuttX operating system, you can visit the [Apache NuttX](https://nuttx.apache.org/) official website. |
+| [apps](../../../../open-vela/apps)             | `apps` is the application library for the open-source real-time operating system (NuttX), containing a series of applications and utilities designed for NuttX RTOS. These applications and tools include shell command-line tools, file system tools, network tools, etc., which can help developers develop and debug embedded systems based on NuttX RTOS more conveniently.                                     |
+| [external](../../../../open-vela/external)     | Third-party libraries introduced by openvela.                                                                                                                                                                                                                                                                                                                                                                       |
+| [tests](../../../../open-vela/tests)           | This repository contains interface tests, specifically including core API tests for multimedia, file systems, memory management, and socket communication.                                                                                                                                                                                                                                                          |
+| [docs](../../../../open-vela/docs)             | Developer documentation for openvela.                                                                                                                                                                                                                                                                                                                                                                               |
 
-## Examples
+## Developer Documentation
+
+- [Documentation Center](https://doc.openvela.com/document)
+
+## Examples Tutorials
 
 - [Music player](./en/demo/Music_Player_Example.md)
 - [Smart band](./en/demo/Smart_Band_Example.md)
@@ -76,4 +98,3 @@ In order to better manage and respond to feedback and support requests, we recom
 - **Discussions**: If you have a broader topic or discussion, you can start a new discussion on the Discussions page.
 
 We appreciate every user's feedback and support. Communicating through the GitHub/Gitee platform is helpful for us to maintain and improve the project.
-

@@ -3,23 +3,17 @@
 <!-- omit from toc -->
 # 目录
 
-- [蓝牙启动问题](#蓝牙启动问题)
+\[ [English](../../../../en/device_dev_guide/connection/bluetooth/how_to_analyze_bluetooth_issues.md) | 简体中文 \]
+
+- [适配、启动问题](#适配启动问题)
   - [分析方法](#分析方法)
-    - [方法：观察蓝牙服务线程是否存在](#方法观察蓝牙服务线程是否存在)
-    - [方法：观察syslog确定蓝牙服务是否启动](#方法观察syslog确定蓝牙服务是否启动)
-    - [方法：观察蓝牙驱动节点是否成功创建](#方法观察蓝牙驱动节点是否成功创建)
+    - [方法：观察蓝牙驱动是否注册成功](#方法观察蓝牙驱动是否注册成功)
+    - [方法：检查蓝牙服务是否启动](#方法检查蓝牙服务是否启动)
+    - [方法：检查蓝牙Enable是否成功](#方法检查蓝牙enable是否成功)
   - [典型问题](#典型问题)
     - [问题：创建蓝牙instance失败](#问题创建蓝牙instance失败)
 - [发现、连接、配对问题](#发现连接配对问题)
-  - [问题1：CTKD BLE LTK 生成 BR LinkKey 失败](#问题1ctkd-ble-ltk-生成-br-linkkey-失败)
-    - [步骤1：打开协议栈 Debug 功能](#步骤1打开协议栈-debug-功能)
-    - [步骤2：复现问题](#步骤2复现问题)
-    - [步骤3：日志解读](#步骤3日志解读)
-  - [问题2：其他 BLE 配对相关问题分析](#问题2其他-ble-配对相关问题分析)
-    - [BLE 配对状态机与流程图](#ble-配对状态机与流程图)
-    - [vela 设备使用 RPA 地址进行配对](#vela-设备使用-rpa-地址进行配对)
-    - [vela 设备使用 Public 地址配对情况](#vela-设备使用-public-地址配对情况)
-  - [发现、连接问题分析方法](#发现连接问题分析方法)
+  - [分析方法](#分析方法-1)
     - [方法：观察是否对方设备未打开可连接模式](#方法观察是否对方设备未打开可连接模式)
     - [方法：观察是否ACL连接超时断开（Connection Timeout）](#方法观察是否acl连接超时断开connection-timeout)
     - [方法：观察是否已经绑定成功，但是未有Profile连接，ACL主动断开](#方法观察是否已经绑定成功但是未有profile连接acl主动断开)
@@ -38,8 +32,11 @@
     - [问题：经典蓝牙设备未被对端设备成功连接](#问题经典蓝牙设备未被对端设备成功连接)
     - [问题：低功耗蓝牙扫描不到对端设备](#问题低功耗蓝牙扫描不到对端设备)
     - [问题：SPP主动连接失败](#问题spp主动连接失败)
+    - [问题：CTKD BLE LTK 生成 BR LinkKey 失败](#问题ctkd-ble-ltk-生成-br-linkkey-失败)
+    - [问题：设备通过 RPA 地址广播未建立连接](#问题设备通过-rpa-地址广播未建立连接)
+    - [问题：设备使用 Public 地址未连接成功](#问题设备使用-public-地址未连接成功)
 - [音频传输问题](#音频传输问题)
-  - [分析方法](#分析方法-1)
+  - [分析方法](#分析方法-2)
     - [方法：观察蓝牙和Media之间的transport是否正确建立](#方法观察蓝牙和media之间的transport是否正确建立)
     - [方法：观察是否建立了AVDTP signaling连接](#方法观察是否建立了avdtp-signaling连接)
     - [方法：观察是否建立了AVDTP media连接](#方法观察是否建立了avdtp-media连接)
@@ -50,13 +47,22 @@
     - [方法：观察音频包序列号是否连续](#方法观察音频包序列号是否连续)
     - [方法：观察air log中1秒内发送的音频数据样本点数量](#方法观察air-log中1秒内发送的音频数据样本点数量)
     - [方法：观察air log中音频数据是否存在重传](#方法观察air-log中音频数据是否存在重传)
+    - [方法：观察syslog判段A2DP-SNK音乐卡顿原因](#方法观察syslog判段a2dp-snk音乐卡顿原因)
+    - [方法：观察A2DP-SNK卡顿是否来源于基带芯片](#方法观察a2dp-snk卡顿是否来源于基带芯片)
+    - [方法：观察A2DP-SNK卡顿是否来源于mips不足](#方法观察a2dp-snk卡顿是否来源于mips不足)
+    - [方法：观察bluetoothd自身是否被阻塞](#方法观察bluetoothd自身是否被阻塞)
   - [典型问题](#典型问题-2)
     - [问题：连接耳机播放音乐，耳机无声](#问题连接耳机播放音乐耳机无声)
     - [问题：连接耳机播放音频文件，音频文件开头缺失](#问题连接耳机播放音频文件音频文件开头缺失)
     - [问题：语音播报，结尾处有pop音](#问题语音播报结尾处有pop音)
     - [问题：连接两对耳机时，出现断连和无声的问题](#问题连接两对耳机时出现断连和无声的问题)
+    - [问题: 连接耳机播放音乐，耳机无声](#问题-连接耳机播放音乐耳机无声)
+    - [问题: 连接耳机播放音频文件，音频文件开头缺失](#问题-连接耳机播放音频文件音频文件开头缺失)
+    - [问题: 语音播报，结尾处有pop音](#问题-语音播报结尾处有pop音)
+    - [问题: 连接手机播放音乐卡顿](#问题-连接手机播放音乐卡顿)
+    - [问题: 连接手机播放音乐无声](#问题-连接手机播放音乐无声)
 - [音乐播放控制问题](#音乐播放控制问题)
-  - [分析方法](#分析方法-2)
+  - [分析方法](#分析方法-3)
     - [方法：观察是否建立了AVRCP连接](#方法观察是否建立了avrcp连接)
     - [方法：观察设备是否支持AVRCP](#方法观察设备是否支持avrcp)
     - [方法：观察是否发送了播放、暂停请求](#方法观察是否发送了播放暂停请求)
@@ -77,7 +83,7 @@
     - [问题：不能受音乐源设备（手机）控制调节音量](#问题不能受音乐源设备手机控制调节音量)
     - [问题：音量异常变化](#问题音量异常变化)
 - [通话问题](#通话问题)
-  - [分析方法](#分析方法-3)
+  - [分析方法](#分析方法-4)
     - [方法：观察是否建立了HFP连接](#方法观察是否建立了hfp连接)
     - [方法：观察设备是否支持HFP](#方法观察设备是否支持hfp)
     - [方法：观察是否建立了SCO连接](#方法观察是否建立了sco连接)
@@ -91,30 +97,130 @@
     - [问题：作为AG端，不能受HF端控制接听电话](#问题作为ag端不能受hf端控制接听电话)
     - [问题：作为HF端，AG端来电，HF端无来电显示](#问题作为hf端ag端来电hf端无来电显示)
 - [数据传输问题](#数据传输问题)
-  - [分析方法](#分析方法-4)
-    - [方法：观察client设备是否发起过Exchange\_MTU规程](#方法观察client设备是否发起过exchange_mtu规程)
-    - [方法：观察当前空口环境是否复杂](#方法观察当前空口环境是否复杂)
-  - [典型问题](#典型问题-5)
-    - [问题：GATT传输数据吞吐率过低](#问题gatt传输数据吞吐率过低)
-- [控制拍照问题](#控制拍照问题)
   - [分析方法](#分析方法-5)
+    - [方法：分析GATT理论吞吐](#方法分析gatt理论吞吐)
+    - [方法：bttool测试GATT吞吐](#方法bttool测试gatt吞吐)
+    - [方法：检查是否打开DLE功能](#方法检查是否打开dle功能)
+    - [方法：观察client设备是否发起过Exchange\_MTU规程](#方法观察client设备是否发起过exchange_mtu规程)
+    - [方法：分析每个连接间隔的最大Event数量](#方法分析每个连接间隔的最大event数量)
+    - [方法：观察当前空口环境是否复杂](#方法观察当前空口环境是否复杂)
+    - [方法： 使用GATT OVER BR数据传输模式](#方法-使用gatt-over-br数据传输模式)
+    - [方法： 使用LE COC数据传输模式](#方法-使用le-coc数据传输模式)
+  - [典型问题](#典型问题-5)
+    - [问题：GATT数据传输吞吐不达标](#问题gatt数据传输吞吐不达标)
+- [控制拍照问题](#控制拍照问题)
+  - [分析方法](#分析方法-6)
     - [方法：观察HID通道连接是否成功](#方法观察hid通道连接是否成功)
     - [方法：观察HID通道手表还是手机断开HID通道](#方法观察hid通道手表还是手机断开hid通道)
     - [方法：手机蓝牙设备绑定数量是否超过7个](#方法手机蓝牙设备绑定数量是否超过7个)
   - [典型问题](#典型问题-6)
     - [问题：手表无法控制手机拍照](#问题手表无法控制手机拍照)
+- [功耗问题](#功耗问题)
+  - [分析方法](#分析方法-7)
+    - [方法：观察是否进入Sniff模式](#方法观察是否进入sniff模式)
+    - [方法：观察是否退出Sniff模式](#方法观察是否退出sniff模式)
+    - [方法：查找当前Profile工作状态的Sniff允许参数](#方法查找当前profile工作状态的sniff允许参数)
+    - [方法：对方优先请求进入Sniff优先级高于本地](#方法对方优先请求进入sniff优先级高于本地)
+    - [方法：对方优先请求退出Sniff优先级低于本地](#方法对方优先请求退出sniff优先级低于本地)
+  - [典型问题](#典型问题-7)
+    - [问题：设备经典蓝牙连接设备功耗异常](#问题设备经典蓝牙连接设备功耗异常)
 
 ---
 
-# 蓝牙启动问题
+# 适配、启动问题
 
 <a id="蓝牙启动问题分析方法"></a>
 
 ## 分析方法
 
-<a id="方法：观察蓝牙服务线程是否存在"></a>
+<a id="方法：观察蓝牙驱动是否注册成功"></a>
 
-### 方法：观察蓝牙服务线程是否存在
+### 方法：观察蓝牙驱动是否注册成功
+
+Vela支持丰富的设备驱动类型，包括BTH4，BTH5，BT Bridge等驱动协议，此外还支持片内蓝牙驱动，以及片外蓝牙驱动，可参考Vela蓝牙驱动文档。
+
+#### 1 观察设备节点是否存在
+
+通过`ls /dev/`命令，观察是否存在`ttyHCI0`设备节点，正常输出信息如下：
+
+```text
+openvela-ap> ls /dev
+/dev:
+ audio/
+ binder
+ ......
+ ttyHCI0
+ ......
+ uorb/
+ ......
+```
+
+#### 2 观察Vendor驱动注册成功
+
+可在Vendor主动注册函数添加debug log，观察Vendor驱动是否注册成功。
+
+<a id="方法：检查蓝牙服务是否启动"></a>
+
+### 方法：检查蓝牙服务是否启动
+
+当前Vela蓝牙服务支持两种运行模式：在应用程序进程中，也支持运行在后台。可依据使用场景来配置。若运行在后台模式运行，可通过如下步骤观察蓝牙服务是否存在。
+
+如下蓝牙bluetootd初始log，包括蓝牙log初始过程，Profile初始化过程，蓝牙驱动初始化过程，以及libuv loop初始化等过程。
+
+```text
+[    0.054300] [11] [  INFO] [ap] bluetoothd main 34
+[    0.074000] [11] [  INFO] [ap] /data/misc/bt folder create: 0
+[    0.084300] [11] [ ALERT] [ap] Framework log level: 7, Stack:0, mask:00000000, Snoop: 0
+[    0.084800] [11] [ DEBUG] [ap] [195][storage]: bt_storage_init successed
+[    0.085100] [11] [ DEBUG] [ap] [129][service_manager]: A2DP-Sink service register success
+[    0.085300] [11] [ DEBUG] [ap] [129][service_manager]: AVRCP-CT service register success
+[    0.085800] [11] [ DEBUG] [ap] [201][adapter-stm]: Enter, PrevState=(null) ---> NewState=Off
+[    0.087400] [11] [  INFO] [ap] [32][stack_manager]: Stack Info: Zblue Ver:5.4 Sal:2
+[    0.088100] [11] [  INFO] [ap] <inf> [h4_init] <406>: Bluetooth H4 driver
+[    0.088600] [11] [ DEBUG] [ap] [45][stack_manager]: stack_manager_init done
+[    0.088700] [11] [ DEBUG] [ap] [257][bt_service]: bt_service_init done
+[    0.089100] [11] [ DEBUG] [ap] [260][service_loop]: service loop running now !!!
+[    0.089300] [11] [ DEBUG] [ap] [134][service_loop]: service_schedule_loop:0x40288958, async:0x4024d1b4
+[    0.090100] [11] [ DEBUG] [ap] [81][service_loop]: set_ready
+```
+
+#### 1. 确认是否启动bluetoothd
+若是通过启动脚本启动bluetoothd服务，请确rcS启动脚本是否配置：
+
+```text
+bluetoothd &
+```
+
+#### 2. 检查各阶段初始化是否成功
+
+按照如上初始化log，可观察到如下初始化过程：
+
+* 检查bt_storage_init是否成功
+  
+```text
+[    0.084800] [11] [ DEBUG] [ap] [195][storage]: bt_storage_init successed
+```
+若是失败，则检查uv db配置是否打开，请查阅系统相关文档或者联系系统团队解决。
+
+* 检查蓝牙目录是否创建成功
+  ```text
+  [    0.074000] [11] [  INFO] [ap] /data/misc/bt folder create: 0
+  ```
+若是失败，则检查目录是否存在，请查阅系统相关文档或者联系系统团队解决。
+
+* 检查协议栈是否初始化成功
+  ```text
+[    0.088600] [11] [ DEBUG] [ap] [45][stack_manager]: stack_manager_init done
+若是失败，则可能协议栈初始化失败，可联系Vela团队解决。
+  ```
+
+* 检查libuv loop是否启动成功
+  ```text
+  [    0.089300] [11] [ DEBUG] [ap] [134][service_loop]: service_schedule_loop:0x40288958, async:0x4024d1b4
+```
+若是失败，则检查libuv loop是否启动成功，btservice模块开源，可在btservice添加debug信息，可进一步确认。
+
+#### 3 检查bluetoothd进程是否运行
 
 利用`ps`命令，观察蓝牙服务线程是否存在，正常输出信息可以观察到名为`bluetoothd`的线程。
 
@@ -134,135 +240,42 @@
    13    11 110 FIFO     pthread   - Waiting  Semaphore 0000000000000000  0004016 0000600  14.9%  sysworkq 0x71ffa5 0x40700350
 ```
 
-<a id="方法：观察蓝牙服务syslog，蓝牙服务框架是否启动"></a>
+<a id="方法：检查蓝牙Enable是否成功"></a>
 
-### 方法：观察syslog确定蓝牙服务是否启动
+### 方法：检查蓝牙Enable是否成功
 
-观察蓝牙服务syslog，检查蓝牙服务是否启动，标准启动流程log如下:
+蓝牙Enable包括蓝牙设备驱动打开，蓝牙各Profile初始化，蓝牙绑定信息恢复等过程。可通过如下步骤观察蓝牙Enable是否成功：
 
-```text
-[    0.054300] [11] [  INFO] [ap] bluetoothd main 34
-[    0.074000] [11] [  INFO] [ap] /data/misc/bt folder create: 0
-[    0.084300] [11] [ ALERT] [ap] Framework log level: 7, Stack:0, mask:00000000, Snoop: 0
-[    0.084800] [11] [ DEBUG] [ap] [195][storage]: bt_storage_init successed
-[    0.085100] [11] [ DEBUG] [ap] [129][service_manager]: A2DP-Sink service register success
-[    0.085300] [11] [ DEBUG] [ap] [129][service_manager]: AVRCP-CT service register success
-[    0.085800] [11] [ DEBUG] [ap] [201][adapter-stm]: Enter, PrevState=(null) ---> NewState=Off
-[    0.087400] [11] [  INFO] [ap] [32][stack_manager]: Stack Info: Zblue Ver:5.4 Sal:2
-[    0.088100] [11] [  INFO] [ap] <inf> [h4_init] <406>: Bluetooth H4 driver
-[    0.088600] [11] [ DEBUG] [ap] [45][stack_manager]: stack_manager_init done
-[    0.088700] [11] [ DEBUG] [ap] [257][bt_service]: bt_service_init done
-[    0.089100] [11] [ DEBUG] [ap] [260][service_loop]: service loop running now !!!
-[    0.089300] [11] [ DEBUG] [ap] [134][service_loop]: service_schedule_loop:0x40288958, async:0x4024d1b4
-[    0.090100] [11] [ DEBUG] [ap] [81][service_loop]: set_ready
-```
-<a id="方法：观察蓝牙驱动节点是否成功创建">
-
-通过 `ps` 命令查看进程列表，确认是否存在 `bluetoothd` 进程。
-
-- **若不存在**：跳转到 **“2. bluetoothd 不存在时的分析方法”**。
-- **若存在**：跳转到 **“3. bluetoothd 存在时的分析方法”**。
-
-##### 2. `bluetoothd` 不存在时的分析方法：
-
-**关键日志检查：**
-
-  **可能原因：**
-
-  - **Framework 初始化失败**：
-
-    ```c
-    [service_manager]: A2DP-Src service register success
-    [storage]: bt_storage_init successed
-    [audio_transport]: audio_transport_open path{4}[sco_ctrl] success
-    ```
-
-    检查日志中上述模块是否出现异常。
-  - **协议栈初始化失败**：
-
-    ```c
-    [stack_manager]: stack_manager_init done
-    ```
-
-    确认协议栈是否成功初始化。
-  - **HCI 驱动读取通道建立失败**：
-
-    ```c
-    [bluelet]: hci_add_recv
-    ```
-
-    检查 `hci` 驱动读取通道是否建立成功。
-  - **libuv Service Loop 异常**：
-
-    ```c
-    [bt_service]: bt_service_init done
-    [service_loop]: service loop running now !!!
-    ```
-
-    确认 `service_loop` 是否初始化成功。
-
-##### 3. `bluetoothd` 存在时的分析方法：
-
-**可能原因：**
-
-- **Socket 建立失败**：
-对于跨核应用（APP 与 `bluetoothd` 不在同一个核），优先排查 **Rpmsg 通道问题**，可参考系统文档：《Rpmsg HCI》、《Rpmsg Socket》。
-- **App 未配置 Loop 环境**：
-  确保 App 使用 `uv_loop` 或 `thread while (1)` 类型循环。参考《如何开发一个蓝牙应用》。
-
-### 方法：观察蓝牙驱动节点是否成功创建
-
-  ```c
-  [72][h4]: bt_sal_hci_transport_init: g_tlfd = 16
-  ```
-
-  - 若 `fd = -1`：蓝牙驱动打开失败，需参考《蓝牙驱动打开失败问题分析》章节。
-  - 若 `fd > 0`：驱动成功，但 `bluetoothd` 初始化失败，需进一步分析原因：
-
-利用`ls /dev`命令，观察蓝牙驱动节点是否成功创建，正常输出信息可以观察到名为`ttyHCI0`的蓝牙驱动节点。
-
-```text
-openvela-ap> ls /dev
-/dev:
- audio/
- binder
- ......
- ttyHCI0
- ......
- uorb/
- ......
- ```
-
-<a id="方法：蓝牙启动典型问题">
-
-## 典型问题
-
-### 问题：创建蓝牙instance失败
-
-##### 特殊场景：APP create_instance 时蓝牙 `bluetoothd` 未初始化完成
-
-**问题表现：**
-APP 在 `bluetoothd` 初始化超时（默认1秒）后创建实例失败。
-
-**定位方法：**
-通过打点蓝牙初始化流程，定位超时位置。
-
-**示例日志：**
+#### 1 观察蓝牙驱动节点是否打开成功
 
 ```c
-[03-10 20:23:11.549][03/09 17:29:15] [15] [cp] [270][BT]: [VelaBT], bt_log_server_init 270
-[03-10 20:23:15.852][03/09 17:29:19] [19] [cp] [BT] bts_adapter_init: create bt instance failed
-[03-10 20:23:17.027][03/09 17:29:20] [15] [cp] [278][BT]: [VelaBT], bt_log_server_init 278
+int bt_sal_hci_transport_init(const bt_vhal_interface* vhal)
+{
+    g_hci_rxlen = 0;
+    g_vhal = vhal;
+    g_tlfd = open(CONFIG_BLUETOOTH_SERVICE_HCI_UART_NAME, O_RDWR | O_BINARY | O_CLOEXEC);
+    BT_LOGI("%s: g_tlfd = %d", __func__, g_tlfd);
+
+    if (g_vhal) {
+        g_vhal->open(g_tlfd);
+    }
+
+    return g_tlfd;
+}
 ```
 
-**解决建议：**
-检查 `bluetoothd` 初始化期间的系统日志，确认超时原因（内部延迟或外部事件干扰）。
+驱动设备节点打开成功log，如下：
 
-##### 初步判断蓝牙适配器状态：
+```text
+[72][h4]: bt_sal_hci_transport_init: g_tlfd = 16
+```
+若 fd = -1，蓝牙驱动打开失败， 确认[方法：观察蓝牙驱动是否注册成功](#方法观察蓝牙驱动是否注册成功-1)驱动已经注册，则进一步排查CONFIG_BLUETOOTH_SERVICE_HCI_UART_NAME配置是否正确。
 
-**关键日志：**
+#### 2 观察Enbale流程是否成功
 
-```c
+蓝牙启动状态机，可观察到蓝牙Enable过程，如下：
+
+```text
 [ap] on_adapter_state_changed_cb: state = 1. ...
 [ap] on_adapter_state_changed_cb: state = 2...
 ```
@@ -277,55 +290,58 @@ APP 在 `bluetoothd` 初始化超时（默认1秒）后创建实例失败。
 | `5`  | 正在关闭 BR/EDR 功能 |
 | `6`  | 正在关闭 BLE 功能    |
 
-**获取状态的替代方法：**
-使用 `bttool` 的 `state` 子命令主动查询适配器状态。
 
-##### 2. 确认状态机异常后的处理：
+<a id="适配启动典型问题"></a>
 
-- **尝试重启或重新 enable**：
-  执行 `bttool disable` 后再 `enable`，观察问题是否重现。
-- **若问题依旧：**
-  打开协议栈日志进行分析：
-  ```c
-  bttool> log enable stack
-  bttool> log mask 1 2
-  bttool> q
-  ```
+## 典型问题
 
-##### 3. 特殊场景：蓝牙驱动异常导致 enable 失败：
+### 问题：创建蓝牙instance失败
 
-**需抓取以下信息：**
+当应用程序调用bluetooth_create_instance接口时，蓝牙instance创建失败，如下：
 
-- **蓝牙状态机值**：确认当前处于哪个状态（如 `state=1` 或 `state=3`）。
-- **底层蓝牙驱动日志**：确认驱动层是否正常。
-- **协议栈日志**：按上述步骤开启并提供关键时间点日志。
-
-**示例日志：**
-
-```c
-[48] [ap] on_adapter_state_changed_cb: state = 1.
-[48] [ap] on_adapter_state_changed_cb: state = 2.
-[48] [ap] on_adapter_state_changed_cb: state = 3.
-[48] [ap] on_adapter_state_changed_cb: state = 4.
+```text
+[03-10 20:23:11.549][03/09 17:29:15] [15] [cp] [270][BT]: [VelaBT], bt_log_server_init 270
+[03-10 20:23:15.852][03/09 17:29:19] [19] [cp] [BT] bts_adapter_init: create bt instance failed
+[03-10 20:23:17.027][03/09 17:29:20] [15] [cp] [278][BT]: [VelaBT], bt_log_server_init 278
 ```
 
-**注意事项：**
-若问题仍无法解决，需将协议栈日志和关键时间点信息提交给 Vela 蓝牙团队。
+蓝牙启动过程包括：设备驱动注册、蓝牙驱动初始化、蓝牙Profile初始化、蓝牙驱动打开、蓝牙Enable等过程。
 
-**归纳总结：**
+第一步，按照[方法：观察蓝牙驱动是否注册成功](#方法观察蓝牙驱动是否注册成功)，检查蓝牙驱动是否注册成功。
 
-* [方法：观察蓝牙服务线程是否存在](#方法观察蓝牙服务线程是否存在)
-  * 如果蓝牙服务线程存在，应当提供完整的系统启动syslog向Vela BT团队寻求支持。
-  * 否则，按照如下方法进一步排查。
+第二步，按照[方法：检查蓝牙服务是否启动](#方法检查蓝牙服务是否启动)，检查蓝牙服务是否启动成功。
 
-* [方法：观察蓝牙服务syslog，蓝牙服务框架是否启动](#方法观察蓝牙服务syslog蓝牙服务框架是否启动)
-  * 如果未找到蓝牙服务启动log，应当确认当前系统defconfig是否配置`CONFIG_BLUETOOTH_SERVER`等配置以及Rcs中配置`bluetoothd &`。
-  * 如果发现启动过程中发现创建目录失败`folder create fail`，请寻求系统技术支持。
-  * 如果发现启动过程存在H4驱动异常，请按如下方法检查是否存在驱动节点。
+第三步，检查蓝牙instance是否创建成功。当bluetoothd进程启动阶段，蓝牙instance创建失败，则需要应用程序重试。保证蓝牙服务启动成功后，再创建蓝牙instance。
 
-* [方法：观察蓝牙驱动节点是否成功创建](#方法观察蓝牙驱动节点是否成功创建)
-  * 如果驱动节点不存在，请查看《如何添加蓝牙驱动》能否解决问题。
-  * 否则，请提供完整的系统启动syslog向Vela BT团队寻求支持。
+```c
+int bt_socket_client_init(bt_instance_t* ins, int family,
+    const char* name, const char* cpu, int port)
+{
+    uv_poll_t* poll;
+    int retry = CLIENT_MAX_RETRY; // 10
+
+    ......
+        do {
+        ins->peer_fd = bt_socket_client_connect(family, name, cpu, port);
+        if (ins->peer_fd <= 0 && !retry) {
+            /* connect fail, go out */
+            bt_socket_client_deinit(ins);
+            return BT_STATUS_PARM_INVALID;
+        } else if (ins->peer_fd <= 0) {
+            /* connect fail, retry after sleep 100ms */
+            usleep(CLIENT_DELAY_MS(retry) * 1000);
+            continue;
+        } else {
+            /* success, goto next step */
+            break;
+        }
+    } while (retry--);
+    ......
+}
+```
+
+第四步，按照[方法：检查蓝牙Enable是否成功](#方法检查蓝牙enable是否成功)，检查蓝牙使能是否成功。
+
 
 # 发现、连接、配对问题
 
@@ -333,133 +349,7 @@ APP 在 `bluetoothd` 初始化超时（默认1秒）后创建实例失败。
 
 <a id="发现连接配对分析方法"></a>
 
-## 问题1：CTKD BLE LTK 生成 BR LinkKey 失败
-
-**说明：**
-
-* vela CTKD 流程在 Host 端完成，抓取 OTA/HCI 日志可以确认 BLE 配对过程是否正常。
-* CTKD 问题深入分析需配合 vela 协议栈日志进行。
-
-### 步骤1：打开协议栈 Debug 功能
-
-```c
-log enable stack
-logmask 1 2 7
-```
-
-具体的 mask 掩码定义，请参考《bttool 使用说明文档》-《log 子命令》。
-
-> 若需打开除掩码 1 和 2 外其他的协议栈 debug 日志功能，请联系 vela 蓝牙开发人员开启对应宏配置并重新编译协议栈静态库。
-
-### 步骤2：复现问题
-
-按照具体场景进行问题复现，并记录相关日志。
-
-### 步骤3：日志解读
-
-* 在日志中全局搜索关键字 `SMP` 或 `CTKD`。
-* 若日志显示 `CTKD LE2BR OFF [LESC disabled]`，意味着从 BLE 到 BR 方向的 CTKD 功能被关闭，原因是未启用 LESC 功能。
-* 若日志显示 `[BR2LE OFF] [Disabled]`，表示 LinkKey 到 LTK 方向的 CTKD 功能被 APP 禁用。
-
-- 在抓取的日志中全局搜索关键字 `SMP` 或 `CTKD`。
-- 若日志显示 `CTKD LE2BR OFF [LESC disabled]`，意味着从 BLE 到 BR 方向的 CTKD 功能已被关闭，原因是未启用 LESC 功能；
-- 若日志显示 `[BR2LE OFF] [Disabled]`，表示 LinkKey 到 LTK 方向的 CTKD 功能已被 APP 禁用。
-
-<img src="img/how_to_analyze_bluetooth_issues/smp/le2brctkd_fail_syslog.png" alt="syslog:CTKD失败" width="50%">
-
-**如何确认当前 LinkKey 是否由 CTKD 生成？**
-
-如下日志示例中，`state:2` 和 `ctkd:1` 表示设备已绑定，且使用 CTKD 生成了 LinkKey：
-
-```
-[ap] [bt] bind_manager_bond_state_change_handler: [D4:68:AA:16:xx:xx] state:2 ctkd:1
-[ap] [bt] bind_manager_send_event: ----> State[START] Event[12:EVENT_BT_CTKD_BONDED_SUCCESS]
-```
-
----
-
-## 问题2：其他 BLE 配对相关问题分析
-
-通过抓取空口日志观察 BLE 配对流程是否符合预期。
-
-### BLE 配对状态机与流程图
-
-- BLE 配对状态机：
-
-<img src="img/how_to_analyze_bluetooth_issues/smp/le_pairing_state_machine.png" alt="BLE配对状态机" width="50%">
-
-- BLE 配对流程图：
-
-<img src="img/how_to_analyze_bluetooth_issues/smp/BLE_Bond_flowchat.png" alt="BLE配对流程图" width="50%">
-
-### vela 设备使用 RPA 地址进行配对
-
-#### Case 1：设备通过 RPA 地址广播建立连接
-
-- Ellisys 空口日志中过滤仅保留手表与 iPhone 手机的 RPA 地址：
-
-<img src="img/how_to_analyze_bluetooth_issues/smp/le_pairing_1.png" alt="设备RPA地址连接" width="50%">
-
-- 手表通过 RPA 地址发送 Connectable 广播：
-
-<img src="img/how_to_analyze_bluetooth_issues/smp/le_pairing_2.png" alt="Connectable广播" width="50%">
-
-- iPhone 手机发送 Scan Request，手表回复 Scan Response 后，手机发送 Connection Indication Packet 完成连接：
-
-<img src="img/how_to_analyze_bluetooth_issues/smp/le_pairing_3.png" alt="BLE连接建立" width="50%">
-
-#### Case 2：确认 BLE 配对完成
-
-- SMP 配对过程顺利完成，双方均支持 LESC，IdKey 分发正常，LinkKey 标志为 1：
-
-<img src="img/how_to_analyze_bluetooth_issues/smp/le_pairing_4.png" alt="SMP配对完成" width="50%">
-
-#### Case 3：确认 IRK 交换成功
-
-- IRK 成功交换后，存入 Resolving List：
-
-<img src="img/how_to_analyze_bluetooth_issues/smp/le_pairing_5.png" alt="IRK交换成功" width="50%">
-
-#### Case 4：确认通过 Identity 地址建立 BR/EDR 连接
-
-- Controller 主动向 Host 请求 LinkKey，并校验通过，无需再次进行 BR/EDR 配对：
-
-<img src="img/how_to_analyze_bluetooth_issues/smp/le_pairing_6.png" alt="BR/EDR连接成功" width="50%">
-
-- 从空口日志进一步确认 LinkKey 校验成功：
-
-<img src="img/how_to_analyze_bluetooth_issues/smp/le_pairing_8.png" alt="LinkKey校验成功" width="50%">
-
-#### Case 5：断连/重启后回连情况
-
-设备信息参考：
-
-| 设备名称                | 地址                           | 模式       | 描述                 |
-| ----------------------- | ------------------------------ | ---------- | -------------------- |
-| REDMI Watch 5 eSIM F345 | 46:E3:3F:E2:8D:2E (Resolvable) | Low Energy | REDMI Watch 5 eSIM   |
-| REDMI Watch 5 eSIM F345 | 3C:AF:B7:FC:F3:45              | Dual Mode  | REDMI Watch 5 eSIM   |
-| xxx的 iPhone         | B4:19:74:13:CE:4A              | Dual Mode  | xxx的 iPhone      |
-| xxx的 iPhone         | 6B:FC:EE:54:F0:9E (Resolvable) | Dual Mode  | xxx的 iPhone      |
-
-- 设备重启后，Resolving List 需要更新到 Controller，重新建立连接：
-
-<img src="img/how_to_analyze_bluetooth_issues/smp/le_pairing_8.png" alt="设备重启后回连成功" width="50%">
-
-- 正常断连回连情况：
-
-<img src="img/how_to_analyze_bluetooth_issues/smp/le_pairing_9.png" alt="正常断连回连成功" width="50%">
-
-### vela 设备使用 Public 地址配对情况
-
-- 使用 Public 地址配对时，不生成或分发 IRK，无 IdKey 位：
-
-<img src="img/how_to_analyze_bluetooth_issues/smp/le_pairing_10.png" alt="Public地址配对" width="50%">
-
-- BR/EDR LinkKey 正常生成：
-
-<img src="img/how_to_analyze_bluetooth_issues/smp/le_pairing_11.png" alt="BR/EDR LinkKey正常生成" width="50%">
-
-## 发现、连接问题分析方法
+## 分析方法
 
 <a id="方法：观察是否对方设备未打开可连接模式"></a>
 
@@ -782,13 +672,10 @@ spp client发起spp连接，需要获取到对端设备的spp服务信息。可�
 
 ### 问题：经典蓝牙设备主动绑定对方设备失败
 
-设备主动绑定失败，可通过下面方法，进一步定位原因。
+设备绑定包括设备连接流程、绑定配对流程、协议连接过程。可通过如下方法，进一步定位原因。
 
+第一步检查设备ACL连接状态，确认是否建立成功。若是连接失败，可通过如下手动辅助定位，否则，进入第二步骤检查设备配对状态。
 * [观察是否对方设备未打开可连接模式](#方法观察是否对方设备未打开可连接模式)
-  * 若是对方设备未打开可连接模式，建议观察手机端未打开可连接模式原因。
-  * 否则，建议按照如下步骤进一步分析。
-
-* [观察是否对方设备未打开可连接模式(Page Timeout)](#方法观察是否对方设备未打开可连接模式)
   * 若是对方设备未打开可连接模式，建议观察手机端未打开可连接模式原因。
   * 否则，建议按照如下步骤进一步分析。
 
@@ -796,10 +683,7 @@ spp client发起spp连接，需要获取到对端设备的spp服务信息。可�
   * 若是在通信距离有效方位内，出现链路层连接超时，请补充空口log及HCI log，一般需要芯片厂商进一步确认蓝牙Controller行为。
   * 否则，建议按照如下步骤进一步分析。
 
-* [观察是否已经绑定成功，但是未有Profile连接，ACL主动断开](#方法观察是否已经绑定成功，但是未有Profile连接，ACL主动断开)
-  * 若ACL连接成功后，未连接A2DP、HID等Profile，设备会断开，符合预期。
-  * 否则，建议按照如下步骤进一步分析。
-
+第二步检查设备配对状态，确认是否配对成功。若是配对失败，可通过如下手段辅助定位，否则，进入第三步骤检查Profile连接状态。
 * [观察是否本地配对信息无效(Linkey Missing)](#方法观察是否本地配对信息无效)
   * 若本地Linkey无效或者丢失（离线取消配对），对方绑定信息有效，手表主动发起配对可能失败，符合预期。
   * 否则，建议按照如下步骤进一步分析。
@@ -807,6 +691,12 @@ spp client发起spp连接，需要获取到对端设备的spp服务信息。可�
 * [观察是否对方配对信息无效(Linkey Missing)](#方法观察是否对方配对信息无效)
   * 若对方Linkey无效或者丢失（离线取消配对），本地绑定信息有效，手表主动发起配对可能失败，符合预期。
   * 否则，建议上传蓝牙服务log、协议栈log、空口log和手机snoop log，再进一步分析。
+
+第三步检查Profile连接状态，确认是否连接成功。若没有Profile连接，可通过如下手段辅助定位，否则，可能蓝牙协议栈问题，建议保存蓝牙服务log、协议栈log、空口log和手机snoop log完整log，联系Vela蓝牙开发工程师求助。
+* [观察是否已经绑定成功，但是未有Profile连接，ACL主动断开](#方法观察是否已经绑定成功，但是未有Profile连接，ACL主动断开)
+  * 若ACL连接成功后，未连接A2DP、HID等Profile，设备会断开，符合预期。
+  * 否则，建议按照如下步骤进一步分析。
+
 
 <a id="问题-耳机断开后回连手表失败"></a>
 
@@ -860,6 +750,125 @@ SPP主动连接失败问题，首先需要按照《发现、连接、配对问�
 * [确认SPP连接状态与断连发起方](#方法：确认SPP连接状态与断连发起方)
   * 若是之前的SPP连接尚未断开，则需要确认SPP连接双方是否有发起断连操作。
   * 否则，建议上传蓝牙服务log、协议栈log、空口log和手机snoop log，进一步分析。
+
+### 问题：CTKD BLE LTK 生成 BR LinkKey 失败
+
+ Vela CTKD 流程在 Host 端完成，抓取 OTA/HCI 日志可以确认 BLE 配对过程是否正常。CTKD 问题深入分析需配合 vela 协议栈日志进行。
+
+#### 1：打开协议栈 Debug 功能
+
+```c
+log enable stack
+logmask 1 2 7
+```
+
+具体的 mask 掩码定义，请参考《bttool 使用说明文档》-《log 子命令》。
+
+若需打开除掩码 1 和 2 外其他的协议栈 debug 日志功能，请联系 vela 蓝牙开发人员开启对应宏配置并重新编译协议栈静态库。
+
+#### 2：复现问题
+
+按照具体场景进行问题复现，并记录相关日志。
+
+#### 3：日志解读
+
+* 在日志中全局搜索关键字 `SMP` 或 `CTKD`。
+* 若日志显示 `CTKD LE2BR OFF [LESC disabled]`，意味着从 BLE 到 BR 方向的 CTKD 功能被关闭，原因是未启用 LESC 功能。
+* 若日志显示 `[BR2LE OFF] [Disabled]`，表示 LinkKey 到 LTK 方向的 CTKD 功能被 APP 禁用。
+
+- 在抓取的日志中全局搜索关键字 `SMP` 或 `CTKD`。
+- 若日志显示 `CTKD LE2BR OFF [LESC disabled]`，意味着从 BLE 到 BR 方向的 CTKD 功能已被关闭，原因是未启用 LESC 功能；
+- 若日志显示 `[BR2LE OFF] [Disabled]`，表示 LinkKey 到 LTK 方向的 CTKD 功能已被 APP 禁用。
+
+<img src="img/how_to_analyze_bluetooth_issues/smp/le2brctkd_fail_syslog.png" alt="syslog:CTKD失败" width="50%">
+
+#### 4:如何确认当前 LinkKey 是否由 CTKD 生成？
+
+如下日志示例中，`state:2` 和 `ctkd:1` 表示设备已绑定，且使用 CTKD 生成了 LinkKey：
+
+```
+[ap] [bt] bind_manager_bond_state_change_handler: [D4:68:AA:16:xx:xx] state:2 ctkd:1
+[ap] [bt] bind_manager_send_event: ----> State[START] Event[12:EVENT_BT_CTKD_BONDED_SUCCESS]
+```
+
+### 问题：设备通过 RPA 地址广播未建立连接
+
+通过抓取空口日志观察 BLE 配对流程是否符合预期。
+
+#### 1:BLE 配对状态机与流程图
+
+- BLE 配对状态机：
+
+<img src="img/how_to_analyze_bluetooth_issues/smp/le_pairing_state_machine.png" alt="BLE配对状态机" width="50%">
+
+- BLE 配对流程图：
+
+<img src="img/how_to_analyze_bluetooth_issues/smp/BLE_Bond_flowchat.png" alt="BLE配对流程图" width="50%">
+
+#### 2:设备通过 RPA 地址广播建立连接过程
+
+- Ellisys 空口日志中过滤仅保留手表与 iPhone 手机的 RPA 地址：
+
+<img src="img/how_to_analyze_bluetooth_issues/smp/le_pairing_1.png" alt="设备RPA地址连接" width="50%">
+
+- 手表通过 RPA 地址发送 Connectable 广播：
+
+<img src="img/how_to_analyze_bluetooth_issues/smp/le_pairing_2.png" alt="Connectable广播" width="50%">
+
+- iPhone 手机发送 Scan Request，手表回复 Scan Response 后，手机发送 Connection Indication Packet 完成连接：
+
+<img src="img/how_to_analyze_bluetooth_issues/smp/le_pairing_3.png" alt="BLE连接建立" width="50%">
+
+#### 3:确认 BLE 配对完成
+
+- SMP 配对过程顺利完成，双方均支持 LESC，IdKey 分发正常，LinkKey 标志为 1：
+
+<img src="img/how_to_analyze_bluetooth_issues/smp/le_pairing_4.png" alt="SMP配对完成" width="50%">
+
+#### 4:确认 IRK 交换成功
+
+- IRK 成功交换后，存入 Resolving List：
+
+<img src="img/how_to_analyze_bluetooth_issues/smp/le_pairing_5.png" alt="IRK交换成功" width="50%">
+
+#### 5:确认通过 Identity 地址建立 BR/EDR 连接
+
+- Controller 主动向 Host 请求 LinkKey，并校验通过，无需再次进行 BR/EDR 配对：
+
+<img src="img/how_to_analyze_bluetooth_issues/smp/le_pairing_6.png" alt="BR/EDR连接成功" width="50%">
+
+- 从空口日志进一步确认 LinkKey 校验成功：
+
+<img src="img/how_to_analyze_bluetooth_issues/smp/le_pairing_8.png" alt="LinkKey校验成功" width="50%">
+
+#### 6:断连/重启后回连情况
+
+设备信息参考：
+
+| 设备名称                | 地址                           | 模式       | 描述                 |
+| ----------------------- | ------------------------------ | ---------- | -------------------- |
+| REDMI Watch 5 eSIM F345 | 46:E3:3F:E2:8D:2E (Resolvable) | Low Energy | REDMI Watch 5 eSIM   |
+| REDMI Watch 5 eSIM F345 | 3C:AF:B7:FC:F3:45              | Dual Mode  | REDMI Watch 5 eSIM   |
+| xxx的 iPhone         | B4:19:74:13:CE:4A              | Dual Mode  | xxx的 iPhone      |
+| xxx的 iPhone         | 6B:FC:EE:54:F0- [适配启动](#适配启动)
+
+设备重启后，Resolving List 需要更新到 Controller，重新建立连接：
+
+<img src="img/how_to_analyze_bluetooth_issues/smp/le_pairing_8.png" alt="设备重启后回连成功" width="50%">
+
+正常断连回连情况：
+
+<img src="img/how_to_analyze_bluetooth_issues/smp/le_pairing_9.png" alt="正常断连回连成功" width="50%">
+
+### 问题：设备使用 Public 地址未连接成功
+
+使用 Public 地址配对时，不生成或分发 IRK，无 IdKey 位：
+
+<img src="img/how_to_analyze_bluetooth_issues/smp/le_pairing_10.png" alt="Public地址配对" width="50%">
+
+BR/EDR LinkKey 正常生成：
+
+<img src="img/how_to_analyze_bluetooth_issues/smp/le_pairing_11.png" alt="BR/EDR LinkKey正常生成" width="50%">
 
 # 音频传输问题
 
@@ -1138,6 +1147,75 @@ air log中基带包有两个参数可以用来判断包是否存在重传，分�
 
 上述log中，设备发了2次2-DH5包，第一次发送的包收到了对端设备的回复，但ARQN为NAK，SEQN值维持不变；第二次的包收到了对端设备的回复，且回复的ARQN是ACK，因此重传结束。
 
+<a id="方法：通过syslog判段A2DP-SNK音乐卡顿原因"></a>
+
+### 方法：观察syslog判段A2DP-SNK音乐卡顿原因
+A2DP-SNK音乐卡顿问题，Bluetooth service提供以下三个syslog，可以根据以下log进行分析：
+```
+[a2dp_snk_stream]: a2dp_sink_audio_handle_timer underflow, miss ticks: x
+
+[a2dp_snk_stream]: ===a2dp cpu busy time:y, buff_cnt:z===
+[a2dp_snk_stream]: ipc blocking, block ticks: w
+```
+
+其中，“underflow, miss ticks: x”表示bluetooth侧的数据buffer在x个ticks（20ms）中为空； “===a2dp cpu busy time: y, buff_cnt: z===”表示发送数据的事件已经 y us未执行，并且当前buffer中数据的个数为z；“ipc blocking, block ticks: w”表示与Media的ipc中阻塞了w个数据包。由于音频链路上有缓存数据的buffer，所以出现以上打印并不一定意味着会出现卡顿，通常x、y、w要大于一定值，才会实际表现出卡顿，具体值取决于Media侧buffer设置的大小。
+
+**注意，该方法仅能进行问题的初步定位**。
+
+#### 1 观察A2DP-SNK音乐卡顿是否可能由基带芯片引起
+
+若未出现“===a2dp cpu busy time: y, buff_cnt: z===”，但存在"underflow, miss ticks: x"，卡顿很有可能是因则优先怀疑音乐卡顿来自于基带芯片。
+
+#### 2 观察A2DP-SNK音乐卡顿是否可能由mips不足引起
+
+若“===a2dp cpu busy time: y, buff_cnt: z===”与“===a2dp cpu busy time: y, buff_cnt: z===”交替出现，应优先怀疑卡顿由mips不足造成。
+
+#### 3 观察A2DP-SNK音乐卡顿是否可能由Bluetooth service
+
+在syslog上，因为Bluetooth service产生的卡顿通常表现的类似于mips不足。
+
+#### 4 观察A2DP-SNK音乐卡顿是否可能由Media service
+
+若出现“ipc blocking, block ticks: w”，说明发送给Media的音频数据没有被及时消费，导致在ipc通道前堆集了w个数据包，在这种情况下应优先考虑Media侧出现问题。
+
+<a id="方法：观察A2DP-SNK卡顿是否来源于基带芯片"></a>
+
+### 方法：观察A2DP-SNK卡顿是否来源于基带芯片
+
+#### 1 通过snoop log观察卡顿是否来源于基带芯片
+
+典型log如下：\
+<img src="img/how_to_analyze_bluetooth_issues/a2dp/snoop_avdtp_audio_data.png" alt="snoop:AVDTP数据" width="50%">
+
+其中，在时间段能收到AVDTP数据的time stamp应大致符合以下关系，（end_time(s) - start_time(s)) * samplerate <= end_time_stamp - start_time_stamp。
+
+#### 2 通过syslog观察卡顿是否来源于基带芯片
+
+在基带芯片驱动处添加syslog可以直接判断音乐卡顿是否来源于基带芯片。\
+**该syslog需要能确认基带芯片是否及时上报数据**，若未及时上报数据，则可以怀疑音乐卡顿来自于基带芯片。\
+由于不同项目使用的基带芯片不同，所以对应的syslog如何添加/开启应该联系负责基带芯片驱动的工程师。
+
+<a id="方法：观察A2DP-SNK卡顿是否来源于mips不足"></a>
+
+### 方法：观察A2DP-SNK卡顿是否来源于mips不足
+
+bluetoothd的优先级在整个系统中往往不是最高，所以如果出现系统mips不足，则有可能出现bluetoothd没有被及时调度去向media发送数据，从而导致Media侧未能及时接收到数据。
+
+#### 1 通过ps命令观察cpu负载情况
+
+对于可持续的长时间卡顿问题，可以直接通过ps命令观察cpu负载情况。若idle task的cpu占用率已经很低/为零，说明存在mips不足的问题，则应先解决系统mips不足的问题。
+
+#### 2 通过工具命令观察cpu负载情况
+
+对于偶现/不可持续的卡顿问题，可以通过抓取发生时间点的trace来分析是否存在短时间内的cpu占用率过高的问题。
+
+<a id="方法：观察bluetoothd自身是否被阻塞"></a>
+
+### 方法：观察bluetoothd自身是否被阻塞
+#### 1 通过debug log判断bluetoothd是否被阻塞
+
+需要对整个蓝牙模块进行打点，可以通过脚本对蓝牙模块的所有函数添加打点log，在复现时间点根据打点log和代码流程观察是否有阻塞现象。
+
 ## 典型问题
 
 ### 问题：连接耳机播放音乐，耳机无声
@@ -1209,6 +1287,77 @@ Vela A2DP SRC当前不支持多设备连接，典型例子是：一个手表连�
   * 若Vela Media未能发送音乐开始的命令，建议在Vela Media模块观察未能发送的原因。
 
   * 若Vela Media发送了音乐开始的命令，但耳机端无声，建议对比典型log，观察播放音乐流程中是否出现异常。
+
+### 问题: 连接耳机播放音乐，耳机无声
+
+* [观察是否建立了AVDTP signaling连接](#方法观察是否建立了avdtp-signaling连接)
+
+  * 若AVDTP signaling连接未建立，建议对比典型log，观察建立signaling连接中是否出现异常。
+
+  * 若两个设备之间的AVDTP signaling连接建立成功，但未能建立AVDTP media连接，建议[观察是否建立了AVDTP media连接](#方法观察是否建立了avdtp-media连接)
+
+* [观察是否建立了AVDTP media连接](#方法观察是否建立了avdtp-media连接)
+
+  * 若两个设备之间的AVDTP media连接未建立，建议对比典型log，观察建立media连接中是否出现异常。
+
+  * 若两个设备之间的AVDTP media连接建立成功，建议观察[观察Media是否成功设置了codec](#方法观察media是否成功设置了codec)
+
+* [观察Media是否成功设置了codec](#方法观察media是否成功设置了codec)
+
+  * 若Vela Media未能成功设置codec，建议在Vela Media模块观察未能设置codec的原因。
+
+  * 若Vela Media成功设置codec，建议观察[观察是否开始播放音乐](#方法观察a2dp-src是否开始播放音乐)
+
+* [观察是否开始播放音乐](#方法观察a2dp-src是否开始播放音乐)
+
+  * 若Vela Media未能发送音乐开始的命令，建议在Vela Media模块观察未能发送的原因。
+
+  * 若Vela Media发送了音乐开始的命令，但耳机端无声，建议对比典型log，观察播放音乐流程中是否出现异常。
+
+### 问题: 连接耳机播放音频文件，音频文件开头缺失
+
+* [观察sequence number是否连续](#方法观察air-log中的音频包序列号是否连续)
+
+  * 若air log中出问题的音频流中存在音频包序列号不连续，建议Vela蓝牙测观察音频流中音频包的序列号不连续的原因。
+
+  * 若音频包序列号连续，建议Vela Media测观察发送的音频包是否完整。
+
+### 问题: 语音播报，结尾处有pop音
+
+### 问题: 连接手机播放音乐卡顿
+
+对于该问题需要进行以下分析：
+
+  [观察air log中音频数据是否存在重传](#方法：方法观察air-log中音频数据是否存在重传)\
+  [通过syslog判段A2DP-SNK音乐卡顿原因](#方法：通过syslog判段A2DP-SNK音乐卡顿原因)
+
+根据推测原因应进行以下分析：
+* 若发现重传现象比较严重
+
+* [观察A2DP-SNK卡顿是否来源于基带芯片](#方法：观察A2DP-SNK卡顿是否来源于基带芯片)
+
+  * 若观察到snoop log中，AVDTP数据包数量不符合预期，需要进一步确认驱动处的数据包情况
+
+    * 若观察到驱动处数据包数量异常，则需要进一步确认问题发生在基带芯片、空口处或者驱动处
+
+* [观察A2DP-SNK卡顿是否来源于mips不足](#方法：观察A2DP-SNK卡顿是否来源于mips不足)
+
+  * 若观察到idle task的cpu占用率过小，需要对系统的mips进行合理分配
+  * 若通过trace观察到某一高优先级线程长时间占据cpu，则应该优化该线程的执行逻辑，避免高优先级线程执行计算密集型任务
+
+* [观察bluetoothd自身是否被阻塞](#方法：观察bluetoothd自身是否被阻塞)
+
+  * 若阻塞由于外部调用产生，则需要考虑该阻塞是否符合预期
+
+    * 若不符合预期，则应优化该外部调用
+    * 若符合预期，则需要异步执行该阻塞动作
+
+  * 若阻塞由于bluetoothd内部产生，则需要对内部动作进行优化
+
+* 对于Media service未及时消费音频数据的问题，需要联系Media service的开发人员确认。
+
+### 问题: 连接手机播放音乐无声
+
 
 # 音乐播放控制问题
 
@@ -1877,6 +2026,110 @@ GATT是低功耗蓝牙通用属性协议，包含client和server两个角色。�
 
 ## 分析方法
 
+<a id="方法：分析GATT理论吞吐"></a>
+
+### 方法：分析GATT理论吞吐
+
+<img src="img/how_to_analyze_bluetooth_issues/gatt/le_ll_packet.png" alt="spec:GATT-DATA-PACKET" width="50%">
+
+链路层启用2M PHY及启用DLE，258 - 2 - 4 - 3 = 251Bytes，251 bytes / 1400μs = 179.3 kB/s
+
+<a id="方法：观察LE数据包格式"></a>
+
+<img src="img/how_to_analyze_bluetooth_issues/gatt/le_tx_time_per_connect_interval.png" alt="sepc:GATT-TX-Event" width="50%">
+
+<a id="方法：观察LE数据连接间隔"></a>
+
+以7.5ms的连接连接为例，7.5ms/1.4ms = 5.35，（5 * 251B）/ 7.5ms = 167.3KB/s
+
+<a id="方法：bttool测试GATT吞吐"></a>
+
+### 方法：bttool测试GATT吞吐
+
+第一步，启动bttool 后的操作步骤如下：
+
+```text
+bttool> enable
+bttool> gatts register 3
+bttool> gatts start 3
+bttool> adv start -m legacy -D
+```
+
+可参考如下log：
+
+```text
+bttool> enable
+bttool> [03/13 12:45:42] [10] [cp] [394][adapter-stm]: Process, State=On, Event=SYS_TURN_ON
+bttool>
+bttool> gatts register 3
+[bttool] register service successful, service_id: 3
+bttool>
+bttool> gatts start 3
+bttool> [bttool] gatts add attribute table complete, handle 0x1, status:0
+bttool>
+bttool> adv start -m legacy -D
+[bttool] adv type: legacy
+[bttool] Advertising handle:0x2057c8e8
+bttool> [bttool] on_advertising_start_cb, handle:0x2057c8e8, adv_id:1, status:0
+[03/13 12:46:07] [13] [cp] AdvType:(Flags)
+[03/13 12:46:07] [13] [cp] AdvData: (0x2050af8a):
+[03/13 12:46:07] [13] [cp] 0000  08                                               .
+[03/13 12:46:07] [13] [cp] AdvType:(Manufacturer Specific Data)
+[03/13 12:46:07] [13] [cp] AdvData: (0x2050af8d):
+[03/13 12:46:07] [13] [cp] 0000  8f 03                                            ..
+[03/13 12:46:07] [13] [cp] AdvType:(Complete Local Name)
+[03/13 12:46:07] [13] [cp] AdvData: (0x2050af92):
+[03/13 12:46:07] [13] [cp] 0000  56 65 6c 61 2d 42 54    
+```
+
+第二步，使用手机发现和连接设备：
+* 发现'Vela-BT'设备后点击'CONNECT'
+* 连接测试设备后使能cccd描述字
+* 若是未打开自动确认配对的话，使能cccd描述字会触发配对操作，需要同时在手机和设备上配对确认
+
+可参考如下log：
+```text
+pair confirm xx:xx:xx:xx:xx:xx 0 1
+[bttool] Device [xx:xx:xx:xx:xx:xx] ssp confirmation Accept
+bttool> [bttool] Device [xx:xx:xx:xx:xx:xx][BREDR] bond state: BONDED, is_ctkd: 1
+[bttool] Device [xx:xx:xx:xx:xx:xx][LE] bond state: BONDED, is_ctkd: 0
+[03/13 13:02:34] [12] [cp] [384][bluelet]: link_encryption_state_callback isBRLink: 0, encrypted: 1
+[03/13 13:02:35] [12] [cp] [1368][adapter-svc]: adapter_on_le_bonded_device_update
+[03/13 13:02:35] [10] [cp] [526][adapter-svc]: DEVICE[xx:xx:xx:xx:xx:xx] LinkKey: 47 | [F61C890E646E82761F6719B350FDA6AD]
+[03/13 13:02:35] [10] [cp] [821][adapter-svc]: LE BOND DEVICE[0]: Addr:[xx:xx:xx:xx:xx:xx] Atype:[1] LTK: [B7EE4D046FB572214C378DDB66614D77]
+[03/13 13:02:35] [12] [cp] [428][bluelet]: ble_add_resolving_list_callback
+[bttool] gatts service TX char ccc changed, addr:xx:xx:xx:xx:xx:xx
+[03/13 13:02:35] [15] [cp] new value: (0x20574aa0):
+[03/13 13:02:35] [15] [cp] 0000  01 00                                            ..
+[03/13 13:02:36] [12] [cp] [384][bluelet]: link_encryption_state_callback isBRLink: 1, encrypted: 1
+```
+
+第三步，启动throughput测试：
+*  nRF Connect APP调整连接间隔和MTU值
+*  bttool中输入以下指令启动throughput测试
+  
+连接间隔和MTU直接影响throughput测试结果，可根据测试要求调整相应配置。
+
+<a id="方法：检查是否打开DLE功能"></a>
+
+### 方法：检查是否打开DLE功能
+
+可以在hci log、snoop log、airlog中检查是否打开LE Data Length Extension功能。
+
+#### 1 通过HCI log检查是否支持DLE
+
+<img src="img/how_to_analyze_bluetooth_issues/gatt/snoop_le_dle_feature.png" alt="sepc:GATT-HCI-DLE" width="50%">
+
+如上图，在初始化阶段，读取本地Feature，是否支持DLE。若是支持，则可以观察在Notification阶段，发送251字节数据包长度。
+
+#### 2 通过Air log检查是否支持DLE
+
+<img src="img/how_to_analyze_bluetooth_issues/gatt/sniffer_le_dle_feature.png" alt="sepc:GATT-HCI-DLE" width="50%">
+
+<img src="img/how_to_analyze_bluetooth_issues/gatt/sniffer_le_dle_data.png" alt="sepc:GATT-HCI-DLE" width="50%">
+
+如上图，在BLE连接阶段，可以在链路层请求查询对方Feature，Max 链路层TX和RX数据包是否支持251字节长度。若是支持，则可以观察在Notification阶段，发送251字节数据包长度。
+
 <a id="方法：观察client设备是否发起过Exchange_MTU规程"></a>
 
 ### 方法：观察client设备是否发起过Exchange_MTU规程
@@ -1898,6 +2151,14 @@ MTU为20时，表示client端未发起exchange_mtu规程，syslog如下：
 
 <img src="img/how_to_analyze_bluetooth_issues/gatt/exchange_mtu.png" alt="snoop:GATT_exchange_mtu" width="50%">
 
+<a id="方法：分析每个连接间隔的最大Event数量"></a>
+
+### 方法：分析每个连接间隔的最大Event数量
+
+<img src="img/how_to_analyze_bluetooth_issues/gatt/sniffer_gatt_througth_15ms.png" alt="sepc:GATT-TX-Throughput" width="50%">
+
+如上图，以连接间隔15ms为例，在一个连接间隔内可最大交互10个Event（15ms/1400us=10.2）
+
 <a id="#方法：观察当前空口环境是否复杂"></a>
 
 ### 方法：观察当前空口环境是否复杂
@@ -1910,21 +2171,51 @@ MTU为20时，表示client端未发起exchange_mtu规程，syslog如下：
 
 <img src="img/how_to_analyze_bluetooth_issues/gatt/channel_quality.png" alt="snoop:信道传输质量" width="50%">
 
+<a id="方法：使用GATT_OVER_BR数据传输模式"></a>
+
+### 方法： 使用GATT OVER BR数据传输模式
+
+在经典蓝牙物理连接上传输GATT数据，利用经典蓝牙3M带宽。启动多时隙包3DH5，理论速率可提升到（1021-4-6）/ 0.625 * 6 = 269.6KB/s
+
+<img src="img/how_to_analyze_bluetooth_issues/gatt/spec_edr_acl_packets_rate.png" alt="sepc:GATT-HCI-DLE" width="50%">
+
+<a id="方法：使用LE_COC数据传输模式"></a>
+
+### 方法： 使用LE COC数据传输模式
+
+<img src="img/how_to_analyze_bluetooth_issues/gatt/le_coc_spp_coexist.png" alt="sepc:GATT-HCI-DLE" width="50%">
+
+from:Bluetooth_5.2_Feature_Overview
+
+ATT传输通道是同步模式，GATT传输使用固定CID=0x04 L2CAP通道，在多个APP请求GATT发送数据可能存在拥塞场景。使用LE COC模式动态建立LE L2CAP通道，避免多APP请求发数据同步延迟。
+
 ## 典型问题
 
-<a id="问题：GATT传输数据吞吐率过低"></a>
+### 问题：GATT数据传输吞吐不达标
 
-### 问题：GATT传输数据吞吐率过低
+Vela提供GATT吞吐测试工具，可以通过bttool与nRF Connect完成notification或者write through方向吞吐测试。
 
-GATT传输数据吞吐率过低的问题可能有多种原因导致，可考虑的定位方法包括：
+注意：
+* 建议在屏蔽箱环境，避免环境干扰导致重传，影响吞吐有效性。
+* 建议关掉本地和对端设备的debug log，避免log刷屏，影响吞吐有效性。
 
-* [观察client设备是否发起过Exchange_MTU规程](方法：观察client设备是否发起过Exchange_MTU规程)
+第一步，建议按照[方法：分析GATT理论吞吐](#方法分析gatt理论吞吐)，计算当前连接参数GATT的理论吞吐，后续测试结果可参考该理论值。
 
-  * 若双方设备未协商过MTU，则控制client端主动发起exchange MTU流程。
+第二步，建议按照[方法：bttool测试GATT吞吐](#方法bttool测试gatt吞吐)，观察测试结果是否符合预期。不符合预期，则建议按照如下步骤依次排查原因。否则，建议进入第三步。
 
-* [观察当前空口环境是否复杂](#方法：观察当前空口环境是否复杂)
+* 步骤一，建议按照[方法：检查是否打开DLE功能](#方法检查是否打开dle功能)，确认是否打开DLE功能。
+  
+* 步骤二，建议按照[方法：观察client设备是否发起过Exchange\_MTU规程](#方法观察client设备是否发起过exchange_mtu规程)，观察exchange_mtu规程，确认MTU是否为514。
+  
+* 步骤三，建议按照[方法：分析每个连接间隔的最大Event数量](#方法分析每个连接间隔的最大event数量)，确认每个连接间隔的event个数是否符合预期，否则，与BTC Vendor进一步确认Controller的行为。
 
-  * 若当前空口环境恶劣导致重传率过高，考虑更换环境进行测试验证。
+* 步骤四，建议按照方法： [方法：观察当前空口环境是否复杂](#方法观察当前空口环境是否复杂)，观察当前空口环境是否复杂。若当前空口环境恶劣导致重传率过高，建议更换环境进行测试验证。
+
+第三步，若是上述分析结果依旧不符合预期，则建议考虑其他方式提高吞吐。比如：LE COC、GATT OVER BR等。
+
+* 若是当前业务支持LE COC通讯，则建议使用COC方案，参考[方法： 使用LE COC数据传输模式](#方法-使用le-coc数据传输模式)。
+  
+* 若是当前业务支持GATT OVER BR通讯，则建议使用GATT OVER BR方案。参考方法：[方法： 使用GATT OVER BR数据传输模式](#方法-使用gatt-over-br数据传输模式)。
 
 # 控制拍照问题
 
@@ -1996,3 +2287,339 @@ bttool> [bttool] hidd_connection_state_cb, addr:a4:cc:b3:xx:xx:xx, transport: br
 
   * 若是手机蓝牙设备绑定数量超过7个，则需要解绑手机蓝牙设备。
   * 否则，则检查手机端是否支持HID，让手机同学进一步分析。
+
+# 功耗问题
+
+## 分析方法
+
+<a id="方法：观察是否进入Sniff模式"></a>
+
+### 方法：观察是否进入Sniff模式
+
+正常情况下，可以通过蓝牙service log、协议栈的syslog、snoop log及空口log观察设备是否进入Sniff模式
+
+#### 1. 通过蓝牙service log观察设备进入Sniff模式
+
+```text
+[20240906_11:33:55_242]#[01/01 01:19:13] [126] [ DEBUG] [ap] [392][pm_mgr]: pm_request_sniff, peer_addr:XX:XX:XX:D7:B4:85, max:800, min:400, attempt:4, timeout:1
+
+[20240906_11:33:55_302]#[01/01 01:19:13] [126] [ DEBUG] [ap] [784][pm_mgr]: bt_pm_remote_link_mode_changed, addr:XX:XX:XX:D7:B4:85, mode:1, sniff_interval:800
+```
+
+#### 2. 通过协议栈syslog观察设备进入Sniff模式
+
+```text
+[20240906_11:33:55_242]#[01/01 01:19:13] [200] [ DEBUG] [ap] ---->[HCI][Cbk][Reg:1][0x60ba2b51]
+[20240906_11:33:55_242]#[01/01 01:19:13] [200] [ DEBUG] [ap]      [OP][Sniff_Mode]
+[20240906_11:33:55_242]#[01/01 01:19:13] [200] [ DEBUG] [ap] 
+[20240906_11:33:55_242]#------>FSM Func Start<------
+[20240906_11:33:55_242]#[01/01 01:19:13] [200] [ DEBUG] [ap] ---->[HCI][CMDN][P:0,$:1][+Sniff_Mode]
+[20240906_11:33:55_242]#[01/01 01:19:13] [200] [ DEBUG] [ap] ---->[HCI][*Send][AID:0,PLen:10][Sniff_Mode]
+[20240906_11:33:55_242]#[01/01 01:19:13] [200] [ DEBUG] [ap]      [connection_handle:2050 | 02,08]
+[20240906_11:33:55_242]#[01/01 01:19:13] [200] [ DEBUG] [ap]      [sniff_max_interval:0x320 * 0.625 = 500.00ms | 20,03]
+[20240906_11:33:55_242]#[01/01 01:19:13] [200] [ DEBUG] [ap]      [sniff_min_interval:0x190 * 0.625 = 250.00ms | 90,01]
+[20240906_11:33:55_242]#[01/01 01:19:13] [200] [ DEBUG] [ap]      [sniff_attempt:0x4 * 1.250 = 5.00ms | 04,00]
+[20240906_11:33:55_242]#[01/01 01:19:13] [200] [ DEBUG] [ap]      [sniff_timeout:0x1 * 1.250 = 1.25ms | 01,00]
+[20240906_11:33:55_242]#[01/01 01:19:13] [200] [ DEBUG] [ap] [HCI][*Send][Command]: 4+10=14
+[20240906_11:33:55_252]#[01/01 01:19:13] [200] [ DEBUG] [ap] 0000: 01 03 08 0A 02 08 20 03 90 01 04 00 01 00         ...... .......  
+[20240906_11:33:55_262]#[01/01 01:19:13] [200] [ DEBUG] [ap] clk enable ret 1
+[20240906_11:33:55_262]#[01/01 01:19:13] [200] [ DEBUG] [ap] clk_enable
+[20240906_11:33:55_262]#[01/01 01:19:13] [126] [ DEBUG] [ap] [HCI][*Recv][Event]: 3+4=7
+[20240906_11:33:55_262]#[01/01 01:19:13] [126] [ DEBUG] [ap] 0000: 04 0F 04 00 01 03 08                              .......         
+[20240906_11:33:55_262]#[01/01 01:19:13] [200] [ DEBUG] [ap] 
+[20240906_11:33:55_262]#------>FSM Func Start<------
+[20240906_11:33:55_262]#[01/01 01:19:13] [200] [ DEBUG] [ap] ---->[HCI][*Recv][AID:0,PLen:4][Command_Status]
+[20240906_11:33:55_262]#[01/01 01:19:13] [200] [ DEBUG] [ap]      [status:OK | 00]
+[20240906_11:33:55_262]#[01/01 01:19:13] [200] [ DEBUG] [ap]      [num_hci_command_packets:01 | 01]
+[20240906_11:33:55_272]#[01/01 01:19:13] [200] [ DEBUG] [ap]      [command_opcode:Sniff_Mode]
+[20240906_11:33:55_282]#[01/01 01:19:13] [126] [ DEBUG] [ap] [HCI][*Recv][Event]: 3+6=9
+[20240906_11:33:55_282]#[01/01 01:19:13] [126] [ DEBUG] [ap] 0000: 04 14 06 00 02 08 02 20 03                        ....... .       
+[20240906_11:33:55_282]#[01/01 01:19:13] [200] [ DEBUG] [ap] 
+[20240906_11:33:55_282]#------>FSM Func Start<------
+[20240906_11:33:55_282]#[01/01 01:19:13] [200] [ DEBUG] [ap] ---->[HCI][*Recv][AID:0,PLen:6][Mode_Change]
+[20240906_11:33:55_282]#[01/01 01:19:13] [200] [ DEBUG] [ap]      [status:OK | 00]
+[20240906_11:33:55_292]#[01/01 01:19:13] [200] [ DEBUG] [ap]      [connection_handle:2050 | 02,08]
+[20240906_11:33:55_292]#[01/01 01:19:13] [200] [ DEBUG] [ap]      [current_mode:Sniff | 02]
+[20240906_11:33:55_292]#[01/01 01:19:13] [200] [ DEBUG] [ap]      [interval:0x320 * 0.625 = 500.00ms | 20,03]
+[20240906_11:33:55_292]#[01/01 01:19:13] [200] [ DEBUG] [ap] ---->[HCI][CMDN][P:1,$:1][-Sniff_Mode][status:OK | 00]
+[20240906_11:33:55_292]#[01/01 01:19:13] [200] [ DEBUG] [ap]      [Mode_Change][T:0x61c81320]
+```
+
+#### 3. 通过snoop log观察设备进入Sniff模式
+#### 4.通过空口log观察设备进入Sniff
+
+<a id="方法：观察是否退出Sniff模式"></a>
+
+### 方法：观察是否退出Sniff模式
+
+正常情况下，可以通过蓝牙service log、协议栈的syslog、snoop log及空口log观察设备是否退出Sniff模式
+
+#### 1.通过蓝牙service log观察设备退出Sniff模式
+
+```text
+[20240909_15:56:55_246]#[09/09 07:56:52] [26] [ DEBUG] [ap] [420][pm_mgr]: pm_request_active, peer_addr:XX:XX:XX:XX:B4:85
+
+[20240909_15:56:55_338]#[09/09 07:56:02] [26] [ DEBUG] [ap] [784][pm_mgr]: bt_pm_remote_link_mode_changed, addr:XX:XX:XX:XX:B4:85, mode:0, sniff_interval:0
+```
+
+#### 2.通过协议栈syslog观察设备退出Sniff模式
+
+```text
+[20240913_11:54:44_358]#[09/13 03:54:43] [14] [cp] 
+[20240913_11:54:44_358]#------>FSM Func Start<------
+[20240913_11:54:44_358]#[09/13 03:54:43] [14] [cp] ---->[HCI][Cbk][Reg:1][0x14102341]
+[20240913_11:54:44_358]#[09/13 03:54:43] [14] [cp]      [OP][Exit_Sniff_Mode]
+[20240913_11:54:44_358]#[09/13 03:54:43] [14] [cp] 
+[20240913_11:54:44_358]#------>FSM Func Start<------
+[20240913_11:54:44_362]#[09/13 03:54:43] [14] [cp] ---->[HCI][CMDN][P:0,$:1][+Exit_Sniff_Mode]
+[20240913_11:54:44_366]#[09/13 03:54:43] [14] [cp] ---->[HCI][*Send][AID:0,PLen:2][Exit_Sniff_Mode]
+[20240913_11:54:44_366]#[09/13 03:54:43] [14] [cp]      [connection_handle:0129 | 81,00]
+[20240913_11:54:44_366]#[09/13 03:54:43] [14] [cp] [HCI][*Send][Command]: 4+2=6
+[20240913_11:54:44_366]#[09/13 03:54:43] [14] [cp] 0000: 01 04 08 02 81 00                                 ......          
+[20240913_11:54:44_366]#[09/13 03:54:44] [14] [cp] 
+[20240913_11:54:44_366]#------>FSM Func Start<------
+[20240913_11:54:44_366]#[09/13 03:54:44] [14] [cp] ---->[HCI][CMDN][P:1,$:0][+Exit_Sniff_Mode]
+[20240913_11:54:44_370]#[09/13 03:54:44] [14] [cp] ---->[HCI][TXQOS][0x430081|L|62][Tail][NewIn][Num:0]
+[20240913_11:54:44_370]#[09/13 03:54:44] [10] [cp] [HCI][*Recv][Event]: 3+4=7
+[20240913_11:54:44_370]#[09/13 03:54:44] [10] [cp] 0000: 04 0F 04 00 05 04 08                              .......         
+[20240913_11:54:44_374]#[09/13 03:54:44] [14] [cp] 
+[20240913_11:54:44_374]#------>FSM Func Start<------
+[20240913_11:54:44_374]#[09/13 03:54:44] [14] [cp] ---->[HCI][*Recv][AID:0,PLen:4][Command_Status]
+[20240913_11:54:44_374]#[09/13 03:54:44] [14] [cp]      [status:OK | 00]
+[20240913_11:54:44_378]#[09/13 03:54:44] [14] [cp]      [num_hci_command_packets:05 | 05]
+[20240913_11:54:44_386]#[09/13 03:54:44] [14] [cp]      [command_opcode:Exit_Sniff_Mode]
+
+[20240913_11:54:44_739]#[09/13 03:54:44] [10] [cp] [HCI][*Recv][Event]: 3+6=9
+[20240913_11:54:44_739]#[09/13 03:54:44] [10] [cp] 0000: 04 14 06 00 81 00 00 00 00                        .........       
+[20240913_11:54:44_743]#[09/13 03:54:44] [14] [cp] 
+[20240913_11:54:44_747]#------>FSM Func Start<------
+[20240913_11:54:44_747]#[09/13 03:54:44] [14] [cp] ---->[HCI][*Recv][AID:0,PLen:6][Mode_Change]
+[20240913_11:54:44_747]#[09/13 03:54:44] [14] [cp]      [status:OK | 00]
+[20240913_11:54:44_747]#[09/13 03:54:44] [14] [cp]      [connection_handle:0129 | 81,00]
+[20240913_11:54:44_747]#[09/13 03:54:44] [14] [cp]      [current_mode:Active | 00]
+[20240913_11:54:44_747]#[09/13 03:54:44] [14] [cp]      [interval:0x0 * 0.625 = 0.00ms | 00,00]
+[20240913_11:54:44_747]#[09/13 03:54:44] [14] [cp] ---->[HCI][CMDN][P:2,$:1][Pend:Exit_Sniff_Mode][-Exit_Sniff_Mode][status:OK | 00]
+[20240913_11:54:44_747]#[09/13 03:54:44] [14] [cp]      [Mode_Change][T:0x2059f160]   
+```
+
+#### 3. 通过snoop log观察设备退出Sniff模式
+
+#### 4. 通过空口log观察设备退出Sniff
+
+<a id="方法：查找当前Profile工作状态的Sniff允许参数"></a>
+
+### 方法：查找当前Profile工作状态的Sniff允许参数
+
+Vela支持如下各Profile的Sniff场景管理，其中每个Profile对应8种状态，每个状态对应的Sniff参数允许模式如下定义。
+
+```c
+static const bt_pm_spec_table_t g_pm_spec[] = {
+    /* HF AG: 0(BT_PM_SPEC_INDEX_0) */
+    { (BT_PM_SNIFF), /* allow sniff */
+        (0), /* the SSR entry */
+        {
+            { BT_PM_SNIFF, 7000 }, /* conn open */
+            { BT_PM_NO_PREF, 0 }, /* conn close  */
+            { BT_PM_NO_ACTION, 0 }, /* app open */
+            { BT_PM_NO_ACTION, 0 }, /* app close */
+            { BT_PM_SNIFF3, 7000 }, /* sco open */
+            { BT_PM_SNIFF, 7000 }, /* sco close */
+            { BT_PM_SNIFF, 7000 }, /* idle */
+            { BT_PM_ACTIVE, 0 } /* busy */
+        } },
+
+    /* AV: 1(BT_PM_SPEC_INDEX_1) */
+    { (BT_PM_SNIFF), /* allow sniff */
+        (0), /* the SSR entry */
+        {
+            { BT_PM_SNIFF, 7000 }, /* conn open */
+            { BT_PM_NO_PREF, 0 }, /* conn close */
+            { BT_PM_NO_ACTION, 0 }, /* app open */
+            { BT_PM_NO_ACTION, 0 }, /* app close */
+            { BT_PM_NO_ACTION, 0 }, /* sco open */
+            { BT_PM_NO_ACTION, 0 }, /* sco close */
+            { BT_PM_SNIFF, 7000 }, /* idle */
+            { BT_PM_ACTIVE, 0 } /* busy */
+        } },
+
+    /* SPP: 2(BT_PM_SPEC_INDEX_2) */
+    { (BT_PM_SNIFF), /* allow sniff */
+        (0), /* the SSR entry */
+        {
+            { BT_PM_ACTIVE, 0 }, /* conn open */
+            { BT_PM_NO_PREF, 0 }, /* conn close */
+            { BT_PM_ACTIVE, 0 }, /* app open */
+            { BT_PM_NO_ACTION, 0 }, /* app close */
+            { BT_PM_NO_ACTION, 0 }, /* sco open */
+            { BT_PM_NO_ACTION, 0 }, /* sco close */
+            { BT_PM_SNIFF, 1000 }, /* idle */
+            { BT_PM_ACTIVE, 0 } /* busy */
+        } },
+
+    /* PAN: 3(BT_PM_SPEC_INDEX_3) */
+    { (BT_PM_SNIFF), /* allow sniff */
+        (0), /* the SSR entry */
+        {
+            { BT_PM_ACTIVE, 0 }, /* conn open */
+            { BT_PM_NO_PREF, 0 }, /* conn close */
+            { BT_PM_ACTIVE, 0 }, /* app open */
+            { BT_PM_NO_ACTION, 0 }, /* app close */
+            { BT_PM_NO_ACTION, 0 }, /* sco open */
+            { BT_PM_NO_ACTION, 0 }, /* sco close */
+            { BT_PM_SNIFF, 5000 }, /* idle */
+            { BT_PM_ACTIVE, 0 } /* busy */
+        } },
+
+    /* HID: 4(BT_PM_SPEC_INDEX_4) */
+    { (BT_PM_SNIFF), /* allow sniff */
+        (0), /* the SSR entry */
+        {
+            { BT_PM_SNIFF, 5000 }, /* conn open */
+            { BT_PM_NO_PREF, 0 }, /* conn close */
+            { BT_PM_NO_ACTION, 0 }, /* app open */
+            { BT_PM_NO_ACTION, 0 }, /* app close */
+            { BT_PM_NO_ACTION, 0 }, /* sco open */
+            { BT_PM_NO_ACTION, 0 }, /* sco close */
+            { BT_PM_SNIFF2, 5000 }, /* idle */
+            { BT_PM_SNIFF4, 200 } /* busy */
+        } },
+};
+```
+
+Vela一共定义7种Sniff模式，各种Sniff mode对应的Interval、Attempt和Timeout参数如下表，其中mode越高表示Sniff间隔越短。
+
+```c
+#ifndef BT_PM_SNIFF_MAX
+#define BT_PM_SNIFF_MAX 800
+#define BT_PM_SNIFF_MIN 400
+#define BT_PM_SNIFF_ATTEMPT 4
+#define BT_PM_SNIFF_TIMEOUT 1
+#endif
+
+#ifndef BT_PM_SNIFF1_MAX
+#define BT_PM_SNIFF1_MAX 400
+#define BT_PM_SNIFF1_MIN 200
+#define BT_PM_SNIFF1_ATTEMPT 4
+#define BT_PM_SNIFF1_TIMEOUT 1
+#endif
+
+#ifndef BT_PM_SNIFF2_MAX
+#define BT_PM_SNIFF2_MAX 54
+#define BT_PM_SNIFF2_MIN 30
+#define BT_PM_SNIFF2_ATTEMPT 4
+#define BT_PM_SNIFF2_TIMEOUT 1
+#endif
+
+#ifndef BT_PM_SNIFF3_MAX
+#define BT_PM_SNIFF3_MAX 150
+#define BT_PM_SNIFF3_MIN 50
+#define BT_PM_SNIFF3_ATTEMPT 4
+#define BT_PM_SNIFF3_TIMEOUT 1
+#endif
+
+#ifndef BT_PM_SNIFF4_MAX
+#define BT_PM_SNIFF4_MAX 18
+#define BT_PM_SNIFF4_MIN 10
+#define BT_PM_SNIFF4_ATTEMPT 4
+#define BT_PM_SNIFF4_TIMEOUT 1
+#endif
+
+#ifndef BT_PM_SNIFF5_MAX
+#define BT_PM_SNIFF5_MAX 36
+#define BT_PM_SNIFF5_MIN 30
+#define BT_PM_SNIFF5_ATTEMPT 2
+#define BT_PM_SNIFF5_TIMEOUT 0
+#endif
+
+#ifndef BT_PM_SNIFF6_MAX
+#define BT_PM_SNIFF6_MAX 18
+#define BT_PM_SNIFF6_MIN 14
+#define BT_PM_SNIFF6_ATTEMPT 1
+#define BT_PM_SNIFF6_TIMEOUT 0
+#endif
+```
+
+<a id="方法：对方优先请求进入Sniff优先级高于本地"></a>
+
+### 方法：对方优先请求进入Sniff优先级高于本地
+
+本地和对方均可以主动发起请求进入Sniff模式，可以通过上述“分析方法：观察是否进入Sniff模式”章节，若是对方优先调度请求进入Sniff，当Controller协商通过时，设备Sniff参数以对方发起协商为准。
+
+```c
+void bt_pm_remote_link_mode_changed(bt_address_t* addr, uint8_t mode, uint16_t sniff_interval)
+{
+    bt_pm_device_t* device;
+    bt_pm_manager_t* manager = &g_pm_manager;
+
+    BT_LOGD("%s, addr:%s, mode:%d, sniff_interval:%" PRId16, __func__, bt_addr_str(addr), mode, sniff_interval);
+    
+    ......
+   
+    switch (mode) {
+    case BT_LINK_MODE_ACTIVE: {
+        pm_stop_timer(addr);
+        pm_mode_request(addr, BT_PM_RESTART, manager->last_profile_id);
+    } break;
+    case BT_LINK_MODE_SNIFF: { //对方进入sniff，则暂停本地Sniff调度
+        pm_stop_timer(addr); 
+    } break;
+    default:
+        break;
+    }
+}
+```
+
+<a id="方法：对方优先请求退出Sniff优先级低于本地"></a>
+
+### 方法：对方优先请求退出Sniff优先级低于本地
+
+本地和对方均可以主动发起请求进入Sniff模式，可以通过上述“分析方法：观察是否退出Sniff模式”章节，若是对方优先调度请求退出Sniff，当Controller协商通过，设备进入Active模式后，重新请求调度本地Sniff状态。
+
+```c
+void bt_pm_remote_link_mode_changed(bt_address_t* addr, uint8_t mode, uint16_t sniff_interval)
+{
+    bt_pm_device_t* device;
+    bt_pm_manager_t* manager = &g_pm_manager;
+
+    BT_LOGD("%s, addr:%s, mode:%d, sniff_interval:%" PRId16, __func__, bt_addr_str(addr), mode, sniff_interval);
+    
+    ......
+   
+    switch (mode) {
+    case BT_LINK_MODE_ACTIVE: { //若是对方请求退出Sniff，则本地请求重新调度
+        pm_stop_timer(addr);
+        pm_mode_request(addr, BT_PM_RESTART, manager->last_profile_id);
+    } break;
+    case BT_LINK_MODE_SNIFF: {
+        pm_stop_timer(addr); 
+    } break;
+    default:
+        break;
+    }
+}
+```
+
+<a id="功耗典型问题"></a>
+
+## 典型问题
+
+<a id="问题-设备经典蓝牙连接设备功耗异常"></a>
+
+### 问题：设备经典蓝牙连接设备功耗异常
+一般情况下，设备在连接状态下，若是设备未发送数据，会进入Sniff模式。若是设备正在发送数据，则会进入Active模式。设备功耗异常，我们需要确认是否在Sniff模式，以及Sniff参数是否符合预期。
+
+Sniff间隔越大，功耗越低，但会导致设备响应变慢。反之，Sniff间隔越小，功耗越高，但会导致设备响应变快。因此，我们需要根据实际场景，选择合适的Sniff间隔。
+
+第一步检查设备Sniff状态，确认是否进入Sniff模式。若是未进入Sniff模式，请按照如下步骤进一步分析。否则，进入第二步骤检查设备Sniff参数是否合理。
+* [方法：观察是否进入Sniff模式](#方法：观察是否进入Sniff模式)
+  * 若是设备未进入Sniff模式，请进一步确认当前是否正在发送数据，比如：听歌、SPP传数据等操作。
+  * 否则，建议按照如下步骤进一步分析。
+
+第二步检查设备Sniff参数是否合理。依据当前Profile工作状态，查找当前Profile工作状态的Sniff允许参数。
+* [方法：查找当前Profile工作状态的Sniff允许参数](#方法：查找当前Profile工作状态的Sniff允许参数)
+  * 若是Sniff参数异常，建议进一步确认，当前是否有其他Profile连接影响，比如在待机场景下，若是HID的处于连接状态，则Sniff优先级高于SPP的Sniff参数，导致待机功耗增加。
+  * 否则,建议按照如下步骤进一步分析。
+
+* [方法：对方优先请求进入Sniff优先级高于本地](#方法：对方优先请求进入Sniff优先级高于本地)
+  * 若是对方请求进入Sniff，并且Sniff参数更严格，则会导致当前连接状态下，功耗异常。
+  * 否则,建议按照如下步骤进一步分析。

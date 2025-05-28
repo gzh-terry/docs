@@ -1,4 +1,6 @@
-# openvela 测试用例开发指南
+# 开发自测试框架使用指南
+
+\[ [English](../../en/test_dev_guide/openvela_testcase_dev_guide.md) | 简体中文 \]
 
 ## 一、简介
 

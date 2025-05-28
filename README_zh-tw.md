@@ -14,7 +14,7 @@ Vela 這個名字源自於拉丁語【帆】，也是南方天空中形似船帆
 
 ## openvela 特色
 
-- **高度可擴展性**：openvela 的設計著重於模組化與可擴充性，讓其能夠靈活適應多樣的物聯網應用場景。最低只需要 8KB RAM 的微型 BLE 模组，最大更可以來到 512MB RAM 帶有螢幕的智慧音箱，openvela 讓設備擁有高度的擴展性。
+- **高度可擴展性**：openvela 的設計著重於模組化與可擴充性，讓其能夠靈活適應多樣的物聯網應用場景。最低只需要 32KB RAM 的微型 BLE 模组，最大更可以來到 512MB RAM 帶有螢幕的智慧音箱，openvela 讓設備擁有高度的擴展性。
 
 - **一站式解决方案**：多年來，openvela 已發展成為一個強大的平台，具有完整的軟體平台，使其成為各種物聯網應用的一站式解決方案。我們不斷融入新功能以滿足新興需求。透過利用 openvela，製造商可以大幅降低研發成本並加快產品開發週期。
 
@@ -28,7 +28,9 @@ Vela 這個名字源自於拉丁語【帆】，也是南方天空中形似船帆
 
 ## 硬體支援
 
-openvela 支援許多不同的架構（ARM32、ARM64、RISC-V、Xtensa、MIPS、CEVA 等）和硬體平台。請在[硬體支援](https://nuttx.apache.org/docs/latest/platforms/index.html)頁面中查詢完整的列表。
+- openvela 支援許多不同的架構（ARM32、ARM64、RISC-V、Xtensa、MIPS、CEVA 等）和硬體平台。
+- 請在[硬體支援](https://nuttx.apache.org/docs/latest/platforms/index.html)頁面中查詢完整的列表。
+- 关于開發板的適配案例，請參見[案例文檔](./zh-cn/dev_board/Development_Board.md)。
 
 ## 快速入門
 
@@ -37,19 +39,23 @@ openvela 支援許多不同的架構（ARM32、ARM64、RISC-V、Xtensa、MIPS、
 1. [準備開發環境](./zh-cn/quickstart/Set_up_the_development_environment_zh-cn.md)
 2. [下载 openvela 原始碼](./zh-cn/quickstart/Download_Vela_sources_zh-cn.md)
 3. [編譯 openvela 原始碼](./zh-cn/quickstart/Build_Vela_from_sources_zh-cn.md)
-4. [在 openvela Emulator 上執行並編譯程式](./zh-cn/quickstart/Run_Vela_on_Vela_Emulator_zh-cn.md)
+4. [在模擬器上執行並編譯程式](./zh-cn/quickstart/Run_Vela_on_Vela_Emulator_zh-cn.md)
 
 ## 子倉庫清單
 
-| 子倉庫連結                                     | 描述                                                                                                                                                                                                                                                                            |
-| :--------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [frameworks](../../../../open-vela/frameworks) | openvela 服務框架：主要包含藍芽、電話、圖形、多媒體、應用框架、安全、系統服務框架（KVDB、OTA、healthd、binder、charger 等）。                                                                                                                                                   |
-| [vendor](../../../../open-vela/vendor)         | 晶片原廠的驅動和框架。                                                                                                                                                                                                                                                          |
+| 子倉庫連結                                     | 描述                                                                                                                                                                                                                                                                         |
+| :--------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [frameworks](../../../../open-vela/frameworks) | openvela 服務框架：主要包含藍芽、電話、圖形、多媒體、應用框架、安全、系統服務框架（KVDB、OTA、healthd、binder、charger 等）。                                                                                                                                                |
+| [vendor](../../../../open-vela/vendor)         | 晶片原廠的驅動和框架。                                                                                                                                                                                                                                                       |
 | [nuttx](../../../../open-vela/nuttx)           | 基於開源的 RTOS NuttX 打造的內核，提供基礎的核心功能，包括任務調度、跨進程通訊、檔案系統、TCP/IP 協定堆疊、裝置驅動和電源管理等，同時對上提供標準的 POSIX 接口。如果您想要對 NuttX 操作系統有更深的了解，可以在 [Apache NuttX](https://nuttx.apache.org/) 官網查看更多資訊。 |
-| [apps](../../../../open-vela/apps)             | `apps` 是開源即時作業系統（NuttX）的應用程式庫，包含了一系列為 NuttX RTOS 設計的應用程式和實用工具。這些應用程式和工具包括 shell 命令列工具、檔案系統工具、網路工具等，它們可以幫助開發者更方便地開發和偵錯基於 NuttX RTOS 的嵌入式系統。                                       |
-| [external](../../../../open-vela/external)     | openvela 引入的第三方程式庫。                                                                                                                                                                                                                                                         |
-| [tests](../../../../open-vela/tests)           | 該倉庫包含接口測試，具體包括多媒體、文件系統、記憶體管理和 socket 通訊等核心 API 的測試。                                                                                                                                                                                         |
-| [docs](../../../../open-vela/docs)             | openvela 對應的開發者文件。                                                                                                                                                                                                                                                     |
+| [apps](../../../../open-vela/apps)             | `apps` 是開源即時作業系統（NuttX）的應用程式庫，包含了一系列為 NuttX RTOS 設計的應用程式和實用工具。這些應用程式和工具包括 shell 命令列工具、檔案系統工具、網路工具等，它們可以幫助開發者更方便地開發和偵錯基於 NuttX RTOS 的嵌入式系統。                                    |
+| [external](../../../../open-vela/external)     | openvela 引入的第三方程式庫。                                                                                                                                                                                                                                                |
+| [tests](../../../../open-vela/tests)           | 該倉庫包含接口測試，具體包括多媒體、文件系統、記憶體管理和 socket 通訊等核心 API 的測試。                                                                                                                                                                                    |
+| [docs](../../../../open-vela/docs)             | openvela 對應的開發者文件。                                                                                                                                                                                                                                                  |
+
+## 開發者文檔
+
+- [文檔中心](https://doc.openvela.com/document)
 
 ## 範例
 

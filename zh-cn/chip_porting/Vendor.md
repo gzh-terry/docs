@@ -1,4 +1,6 @@
-# Vendor 代码仓
+# Vendor 代码仓说明
+
+\[ [English](../../en/chip_porting/Vendor.md) | 简体中文 \]
 
 ## 一、概述
 

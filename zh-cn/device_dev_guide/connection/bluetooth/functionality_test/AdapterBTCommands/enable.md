@@ -1,4 +1,6 @@
-# 蓝牙适配器 enable 子命令
+# enable 子命令
+
+\[ [English](../../../../../../en/device_dev_guide/connection/bluetooth/functionality_test/AdapterBTCommands/enable.md) | 简体中文 \]
 
 ## 一、简介
 

@@ -1,4 +1,6 @@
-# 使用 ifconfig 命令配置网卡
+# ifconfig
+
+\[ [English](../../../../../en/device_dev_guide/connection/network/network_tools/ifconfig.md) | 简体中文 \]
 
 ## 一、概述
 

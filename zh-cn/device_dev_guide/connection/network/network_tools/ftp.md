@@ -1,4 +1,6 @@
-# ftpd 文件传输指南
+# ftp
+
+\[ [English](../../../../../en/device_dev_guide/connection/network/network_tools/ftp.md) | 简体中文 \]
 
 ## 一、概述
 

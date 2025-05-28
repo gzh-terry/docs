@@ -1,4 +1,6 @@
-# 蓝牙适配器 disable 子命令
+# disable 子命令
+
+\[ [English](../../../../../../en/device_dev_guide/connection/bluetooth/functionality_test/AdapterBTCommands/disable.md) | 简体中文 \]
 
 ## 一、简介
 

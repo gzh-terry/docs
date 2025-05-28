@@ -1,322 +1,707 @@
-# openvela 硬件移植指南
+# New Platform Adaptation Guide
 
-## 一、概述
+\[ English | [简体中文](../../zh-cn/chip_porting/porting_guide.md) \]
 
-openvela 内核通过对硬件进行抽象分层设计，不仅提升了代码复用性，还使开发板的配置更加灵活。以下是 openvela 的硬件层次结构。
+## 1. Objectives of this article
 
-### 1、硬件层次结构
+1. Understand the bringup process of openvela.
+
+2. Understand how to adapt new chips and board-level designs in openvela.
+
+## 2. Overview
+
+openvela is an embedded operating system that supports multiple hardware platforms and is modular and highly scalable. Through layered architecture design, openvela simplifies the adaptation work from processor architecture, chip layer to board-level platform. This document introduces the system architecture, porting steps and related development resources of openvela.
+
+### 1. System Architecture
+
+The design of openvela is divided into three layers of architecture, namely architecture layer (Architecture), chip layer (Chip/SoC) and board layer (Board).
 
 ![img](./figures/001.svg)
 
-- **Architecture（架构层）**：CPU 架构层，支持多种主流 CPU 架构，包括 ARMv7-M、ARMv7-A/R 和 RISC-V。
-- **Chip/****SoC****（芯片层）**：System on Chip (SoC) 是片上系统体系结构，每个处理器架构均嵌入在 SoC 系统中。完整的 SoC 结构包括处理器架构及芯片特定的中断逻辑、时钟逻辑、通用 I/O 逻辑以及专用内部外设。例如，基于 ARMv7-M 处理器的 STM32 是典型的 SoC。
-- **Board（板级层）**：SoC 与其他外设连接形成特定功能的电路板。例如，STM32F4 Discovery 电路板中包含 STM32F407 SoC。
+#### Architecture
 
-### 2、硬件支持与移植指南
+The architecture layer is the core foundation of the system and defines the CPU architecture, such as mainstream processor architectures such as ARMv7-M, ARMv7-A/R, and RISC-V. openvela already supports a variety of CPU architectures, usually without modification or adaptation.
 
-openvela 已支持多种评估板，具体信息可参阅 [openvela Supported Platforms](https://nuttx.apache.org/docs/latest/platforms/index.html#)。
+#### Chip/SoC
 
-如果需要将 openvela 移植到新的评估板上，需要依次完成以下三层的移植工作：
+The chip layer (System on Chip, SoC for short) is extended based on a specific processor architecture and includes specific logic designs of the chip, such as interrupt control, clock management, general I/O logic, and dedicated peripheral modules. For example, the STM32 with the ARMv7-M processor architecture is a typical SoC.
 
-1. 架构层 (Architecture)
-2. SoC 层 (Chip/SoC)
-3. 板级层 (Board)
+#### Board
 
-以下将以基于 RISC-V 架构的 `qemu-rv` 为例，详细说明移植流程。
+The board layer connects peripherals on the basis of the chip to form a development board with specific functions. For example, the STM32F4 Discovery development board contains the STM32F407 SoC, and integrates external sensors and other auxiliary circuit boards. Board-level adaptation usually includes PIN pin definition, board-level driver, and hardware initialization logic.
 
-## 二、Architecture 适配
+During the development process, multiple similar SoCs or development boards can share common code to improve development efficiency and maintenance convenience.
 
-> **说明**  本文不涉及新增Architecture的适配。
+### 2. Supported platforms and porting instructions
 
-openvela 已支持大部分常用的 CPU 架构，用户可根据需求选择对应的 CPU 架构。
+openvela has supported a variety of mainstream development boards. Please refer to [Supported Platforms](https://nuttx.apache.org/docs/latest/platforms/index.html#) for detailed information.
 
-例如，在 qemu-rv 中需要选择 `CONFIG_ARCH_RISCV=y`。
+If you need to port openvela to a new development board, you need to complete the following adaptation work:
 
-以下是 openvela 当前支持的 Architecture 列表：
+1. Make sure the target architecture is supported by openvela.
+2. For the new development board, complete the following levels of adaptation:
 
-- **arch/arm**：包含通用的 ARM32 体系结构。
-- **arch/arm64**：包含通用的 ARM64 体系结构。
-- **arch/avr**：包含通用的 AVR 和 AVR32 体系结构。
-- **arch/ceva**：包含 CEVA 体系结构。
-- **arch/hc**：包含 HC M9S12 芯片体系结构。
-- **arch/mips**：包含通用的 MIPS 体系结构。
-- **arch/misoc**：包含 Misoc LM3 体系结构。
-- **arch/or1k**：包含 OpenRISC mor1kx 体系结构。
-- **arch/renesas**：包含各种 Renesas 体系结构，目前支持 M16C 和 SuperH-1 体系结构。
-- **arch/risc-v**：包含 RISC-V 32/64 体系结构。
-- **arch/sim**：用于在 x86 Linux 或 Cygwin 平台上进行 OpenVela OS 特性开发。
-- **arch/sparc**：包含 SPARC 体系结构。
-- **arch/x86**：包含 x86 32bit 体系结构。
-- **arch/x86_64**：包含 x86 64bit 体系结构。
-- **arch/xtensa**：包含 Xtensa LX6/7 体系结构。
-- **arch/z16f**：包含 Zilog z16f 微处理器体系结构。
-- **arch/z80**：包含 8bit ZiLOG 体系结构。
+    - Chip layer (Chip/SoC): Add support for the target chip. The code usually follows a certain architecture directory under `nuttx/arch` (such as armv8-m, risc-v, arm64, etc.).
 
-## 三、Chip适配
+    - Board layer (Board): Complete the configuration, link script and driver adaptation related to the target development board.
 
-对于移植 openvela 已支持的体系结构，Chip 级别的适配主要工作是实现该 Chip 的启动文件和片内外设驱动。实现最小系统移植时，需要完成 **timer 驱动** 和 **serial 驱动** 的实现。
+After completing the adaptation process, the following binary products can be generated for deployment to the target hardware:
 
-### 1、目录结构
+- **libarch.a**: Architecture layer static library.
 
-Chip 级别的代码位于 `arch/<arch_name>` 目录下，主要由以下内容构成：
+- **libboards.a**: Code driver static library.
 
-- `include/<chip_name>`：包含 Chip 特定的头文件，在编译时会链接为 `include/arch/chip` 目录。
-- `src/<chip_name>`：包含 Chip 特定的启动文件和驱动程序，在编译时会链接为 `src/chip` 目录。
-- `src/<chip_name>/Make.defs`：Makefile 的片段文件，指示 Chip 相关编译参数及参与编译的文件。
-- `src/<chip_name>/Kconfig`：包含 Chip 相关的配置选项。
+- **vela_nuttx.bin**: The final running binary file generated by compilation.
 
-以下以 `qemu-rv` 为例说明其目录结构：
+### 3. New platform porting process
 
-```Bash
-nuttx/arch/risc-v/include/qemu-rv
-            ├── chip.h
-            └── irq.h
+When porting openvela, the following operations need to be completed:
 
-nuttx/arch/risc-v/src/qemu-rv
-            ├── chip.h                   // 对外提供的接口定义
-            ├── hardware
-            │   ├── qemu_rv_clint.h      // CLINT寄存器地址定义
-            │   ├── qemu_rv_memorymap.h  // 芯片内部的寄存器映射定义
-            │   └── qemu_rv_plic.h       // PLIC寄存器地址定义
-            ├── Kconfig                  // 芯片特性配置选项
-            ├── Make.defs                // 用于提供芯片的编译参数及参与编译的文件
-            ├── qemu_rv_allocateheap.c   // 提供heap分配相关的接口
-            ├── qemu_rv_head.S           // 启动文件
-            ├── qemu_rv_irq.c            // 初始化/开/关中断等接口的实现
-            ├── qemu_rv_irq_dispatch.c   // 中断分发相关接口实现
-            ├── qemu_rv_memorymap.h      // 提供idle线程栈的定义
-            ├── qemu_rv_mm_init.c        // 提供MMU相关的配置接口
-            ├── qemu_rv_mm_init.h
-            ├── qemu_rv_pgalloc.c        // 提供页内存分配器
-            ├── qemu_rv_start.c          // 提供芯片初始化接口
-            └── qemu_rv_timerisr.c       // 提供系统定时器相关的接口
+1. Familiar with the code structure. Developers need to be familiar with the basic structure of [Vendor code warehouse](Vendor.md). The `vendor` directory supports the management of vendor customized code through Git warehouse. The directory is usually named after the vendor name, for example, [open-vela/vendor_template](../../../../open-vela/vendor_template) is an adaptation template.
+2. Configure the Kconfig file.
+
+    - Kconfig: used to define compilation options and module dependencies. Developers need to ensure that the required functions are enabled in Kconfig according to the hardware module and peripheral configuration files. For Kconfig usage, please refer to [Kconfig Usage Guide](../device_dev_guide/build/Kconfig.md).
+
+3. Write Makefile.
+
+    - Makefile uses the tool chain to complete code compilation. It is necessary to ensure that the rules are defined correctly and support the target hardware platform.
+
+4. Complete the chip layer (Chip/SoC) and board layer (Board) code adaptation. According to the template in [open-vela/vendor_template](../../../../open-vela/vendor_template), adapt the chip layer and board layer code. It is necessary to update the driver file, board-level configuration file, and complete the hardware initialization logic.
+5. Compile and test. Compile and generate the target static library and the final run file to test whether all functions work properly.
+
+### 4. Compilation method and product management
+
+Developers need to pay attention to the following:
+
+- All custom codes are stored in the `vendor` directory, and the core code must not be modified to maintain compatibility with the main repository of openvela.
+- The products generated by the compilation step include:
+    - **libarch.a**: architecture layer code library.
+    - **libboards.a**: board-level code library.
+    - **vela_nuttx.bin**: the final binary image for firmware burning.
+
+### 5. Sample flow chart
+
+The following is a flow chart for porting to the new openvela platform, which intuitively shows the development steps and logical sequence:
+
+![img](./figures/002.png)
+
+The following takes the adaptation in the `vendor` directory as an example. The initial source code of all **vendor** repositories is [open-vela/vendor_template](../../../../open-vela/vendor_template). This template contains the basic code structure of the operating system, so the adaptation process only needs to open the corresponding file for modification.
+
+## 3. Chip layer adaptation
+
+Chip layer adaptation is an important part of supporting hardware platforms in the openvela framework. It mainly completes the entry function based on the operating system, involving the implementation and configuration of the following aspects:
+
+1. Start entry function: define the initial loading logic of the operating system.
+
+2. Architecture (Arch) API implementation: implement the infrastructure interface required for system calls.
+
+3. Interrupt adaptation: configure interrupt handling functions and related registers.
+4. Serial port driver: implement serial port input and output, and register the serial port driver.
+5. Timer driver: support operating system scheduling and time-related functions.
+6. Memory (heap area) initialization: configure the heap area required for dynamic memory allocation.
+7. Kconfig and Makefile writing: manage configuration options and code building process.
+
+The chip layer code is located in the `vendor/<vendor_name>/chips` directory. The typical directory structure is as follows:
+
+```Shell
+vendor/vendor_name/
+├── chips
+│ └── <chip_name>
+│ ├── chip.h
+│ ├── include
+│ │ ├── chip.h
+│ │ └── irq.h
+│ ├── Kconfig
+│ ├── Make.defs
+│ ├── <vendor_name>_irq.c
+│ ├── <vendor_name>_irq.h
+│ ├── <vendor_name>_lowputc.c
+│ ├── <vendor_name>_lowputc.h
+│ ├── <vendor_name>_start.c
+│ ├── <vendor_name>_start.h
+│ └── <vendor_name>_timeisr.c
 ```
 
-### 2、实现API
+### 1. Startup entry
 
-内核需要 Architecture 代码提供一组 API 来实现基本功能。Architecture 层已经实现了通用的 API，用户也可以根据需求自行实现这些接口以完成更高级的功能。例如，通过自定义实现 `up_idle()` 提供低功耗能力。对于未实现的 API，用户需要在 Chip 层中自行实现。因此，Chip 层需要实现的 API 主要包括以下内容：
+#### Overview
 
-- Architecture 层中未实现的 API。
-- 启动接口。
-- 片内外设初始化接口。
+In the `nuttx/arch` directory, the system defines an exception vector table (such as `_vectors`) for each architecture (arch) to unify the exception handling process.
 
-API 列表及详细信息可参考[此链接](https://nuttx.apache.org/docs/latest/reference/os/arch.html)。
+Taking [ARMv8-M](https://github.com/open-vela/nuttx/blob/41545a4ca98165813908e5fe25d3ecdbfc5ab19a/arch/arm/src/armv8-m/arm_vectors.c#L94) as an example, when a reset exception occurs, the system will call the `__start` function implemented by different chips.
 
-#### Chip 层 API 示例
+The specific implementation of the `__start` function is located in the **`<vendor_name>`**`_start.c` file. Developers can refer to typical implementations, such as [stm32_start.c](https://github.com/open-vela/nuttx/blob/41545a4ca98165813908e5fe25d3ecdbfc5ab19a/arch/arm/src/stm32f7/stm32_start.c), to complete the adaptation of the chip platform.
 
-以 `qemu-rv` 为例，Chip 级别提供的 API 包括以下内容：
+#### Responsibilities of the `__start` function
 
-- `__start`
+The `__start` function is the entry function for system reset exceptions, and its main responsibilities include the following aspects:
 
-    通常实现在 `xxx_head.S` 文件中，例如 `qemu_rv_head.S`。芯片上电后，程序通常从这里开始执行，完成进入 C 环境前的准备工作，例如设置栈指针、关闭不必要的中断等操作。
-- `qemu_rv_start`
-  
-  C 级别的启动代码，由 `__start` 调用，负责完成 `.bss` 段、`.data` 段的初始化操作，并启动内核。
+- Clear the BSS segment:
+    - The BSS (Block Started by Symbol) segment is used to store uninitialized global variables and static variables. After the system is reset, it needs to be cleared.
+- Copy `.data` and RAM functions to the specified location:
+    - Copy the `.data` segment and RAM functions in the read-only memory (such as Flash) to the specified area of ​​the runtime RAM.
+- Initialize necessary modules:
+    - Configure the system clock (clock).
+    - Initialize the serial port (serial).
+    - Set environment variables such as stack limit (stack limit).
+- Call the operating system startup entry:
+    - Load and start the openvela core operating system through the `nx_start()` function.
 
-- `up_allocate_heap`
+#### Sample code: `__start` function
 
-    为内核提供可用的堆（heap）区间，包括起始地址和大小信息。
-- `riscv_dispatch_irq`
-  
-  中断派发逻辑，用于清理中断标志并完成与外设相关的中断派发操作。
-- `up_irqinitialize`
-  
-  初始化中断系统，通常包括挂载中断服务函数和清理无效的中断标志。
-- `up_disable_irq` / `up_enable_irq`
-  
-  根据指定的中断号，启用或禁用特定中断。
-- `up_irq_enable`
-  
-  开启总中断。
-- `riscv_serialinit`
-  
-  串口初始化，通常用于日志输出。
-- `up_putc`
-  
-  打印单个字符。
-- `up_timer_initialize`
-  
-  初始化系统定时器，用于提供周期性中断。
+The following is a standard `__start` function implementation template, which is used to complete the initialization process of the system reset entry:
 
-### 3、添加 Kconfig  配置
+```C
+/****************************************************************************
+* Name: __start
+*
+* Description:
+* This is the reset entry point.
+*
+****************************************************************************/
 
-以 `qemu-rv` 为例，Chip 相关的配置选项如下所示：
+void __start(void)
+{
+/* do something initialize */
 
-```Makefile
-if ARCH_CHIP_QEMU_RV
-comment "QEMU RISC-V Options"
+...
+
+#ifdef CONFIG_ARCH_PERF_EVENTS
+up_perf_init((void *)STM32_SYSCLK_FREQUENCY);
+
+#endif
+
+/* Perform early serial initialization */
+
+#ifdef USE_EARLYSERIALINIT
+arm_earlyserialinit();
+
+#endif
+
+/* Bring up NuttX */
+
+nx_start();
+
+/* Shouldn't get here */
+
+for (; ; );
+}
+```
+
+### 2. Serial port
+
+#### Overview
+
+The chip usually contains multiple serial ports, and one serial port is usually selected as the system console (console) for outputting logs and `nsh` interaction. During the system initialization (bringup) process, the normal operation of this serial port is very critical. For details, please refer to [Serial Port Driver Adaptation](../device_dev_guide/driver/bus_driver/UART/UART.md).
+
+#### Code location
+
+- Reference implementation:
+    - [stm32_serial.c](https://github.com/open-vela/nuttx/blob/41545a4ca98165813908e5fe25d3ecdbfc5ab19a/arch/arm/src/stm32f7/stm32_serial.c)
+    - [stm32_lowputc.c](https://github.com/open-vela/nuttx/blob/41545a4ca98165813908
+
+- Serial port related implementations are generally located in:
+
+- `<vendor_name>_lowputc.c`
+- `<vendor_name>_serial.c`
+
+#### Initialization process
+
+- Serial port initialization usually occurs before `nx_start`.
+
+- Each architecture (arch) provides the `<arch>_earlyserialinit` interface to initialize the serial port registers corresponding to the console, and the `<arch>_lowputc` function can be used to complete log printing later. The following are sample functions for the ARM platform: 
+
+```C
+
+    ./arm/src/common/arm_internal.h
+
+    /****************************************************************************
+    - Name: arm_earlyserialinit
+    -
+    - Description:
+    - Performs the low level USART initialization early in debug so that the
+    - serial console will be available during bootup.  This must be called
+    - before arm_serialinit.
+    -
+     ****************************************************************************/
+
+    #ifdef USE_EARLYSERIALINIT
+    void arm_earlyserialinit(void)
+    {
+    }
+
+    /****************************************************************************
+    - Name: arm_lowputc
+    -
+    - Description:
+    - Output one byte on the serial console
+    -
+     ****************************************************************************/
+
+    void arm_lowputc(char ch)
+    {
+    }
+
+    ```
+
+
+#### Serial port access
+
+Operating system code will use the common architecture interfaces `up_putc` and `up_puts` to directly access the serial port, of which `up_putc` needs to be implemented by the manufacturer.
+
+```C
+/****************************************************************************
+* Name: up_putc
+*
+* Description:
+* Provide priority, low-level access to support OS debug writes
+*
+****************************************************************************/
+
+void up_putc(int ch)
+{
+}
+```
+
+#### Serial port driver registration
+
+In order for the application to access the physical serial port through standard input/output (`stdin/out/err`), the serial port driver must be registered.
+
+- Each architecture provides the `<arm>_serialinit` interface, which is implemented by the manufacturer.
+
+- Internally call `uart_register` to register the console and other serial port device nodes. The following is an example for the ARM platform:
+
+```C
+
+/************************************************************************
+- Name: arm_serialinit
+-
+- Description:
+- Register serial console and serial ports. This assumes
+- that arm_earlyserialinit was called previously.
+-
+********************************************************************************/
+
+void arm_serialinit(void)
+{
+#ifdef CONSOLE_DEV
+uart_register("/dev/console", &CONSOLE_DEV);
+#endif
+...
+}
+```
+
+### 3. Timer
+
+#### Overview
+
+Timer is related to the timing and timing of the system. In openvela, two main driver models are provided:
+
+- `arch_alarm`: based on a oneshot timer (oneshot driver).
+- `arch_timer`: Based on the regular timer (timer driver).
+
+The main difference between the two drivers is the way to handle the hardware counter after timeout, which directly affects the timing accuracy and error.
+
+#### Driver model differences and applicability
+
+- arch_alarm is suitable for situations where the hardware counter does not need to be cleared after timeout. This model avoids the cumulative error caused by restarting the counter.
+
+- arch_timer is usually adapted to periodic timers such as the system tick timer (`systick`). The hardware counter needs to be cleared and restarted after timeout. For more details, please refer to [Arch Timer Driver Framework Usage Guide](../device_dev_guide/driver/timer_driver/timer/Arch_Timer.md).
+
+#### arch_alarm driver adaptation process
+
+When implementing, manufacturers mainly focus on the following steps:
+
+1. Implement a oneshot timer driver.
+2. In the `up_timer_initialize` function, call the driver initialization interface to create a `oneshot_lowerhalf_s` instance.
+3. Call `up_alarm_set_lowerhalf` to bind the driver to the system `arch_alarm` model.
+
+Here is the reference implementation of the `up_timer_initialize` function, located in [arm_arch_timer.c](https://github.com/open-vela/nuttx/blob/41545a4ca98165813908e5fe25d3ecdbfc5ab19a/arch/arm/src/armv8-r/arm_arch_timer.c#L377):
+
+```C
+/********************************************************************************
+* Function: up_timer_initialize
+*
+* Description:
+* This function is called during start-up to initialize the timer
+* interrupt.
+*
+****************************************************************************/
+
+void up_timer_initialize(void)
+{
+struct oneshot_lowerhalf_s *lower = xxx_oneshot_initialize();
+
+up_alarm_set_lowerhalf(lower);
+}
+```
+
+### 4. Exceptions/interrupts
+
+Each architecture (arch) provides a corresponding interrupt exception vector table, allowing manufacturers to call `irq_attach` to bind the corresponding interrupt processing function.
+
+To implement interrupt initialization, enabling, disabling and priority setting, manufacturers need to implement a series of architecture-related functions starting with `up_`.
+
+- For details, please refer to [Interrupt System Adaptation Guide](./Interrupt_System_Adaptation_Guide.md).
+- For relevant code, please refer to [stm32_irq.c](https://github.com/open-vela/nuttx/blob/41545a4ca98165813908e5fe25d3ecdbfc5ab19a/arch/arm/src/stm32f7/stm32_irq.c), and the interrupt implementation is in `<vendor_name>_irq.c`.
+
+### 5. Stack/Heap
+
+#### Overview
+
+In embedded systems, the division of stack and heap is crucial. The memory layout under a flat build is usually as follows:
+
+
+```C
+.data region              Size determined at link time.
+.bss region               Size determined at link time.
+IDLE thread stack         Size determined by CONFIG_IDLETHREAD_STACKSIZE.
+Heap                      Extends to the end of SRAM.
+```
+
+
+The explanation is as follows:
+
+- `.data` region: The size of this region is determined at link time.
+- `.bss` region: The size of this region is determined at link time.
+- IDLE thread stack: The size is defined by `CONFIG_IDLETHREAD_STACKSIZE`.
+- Heap: Extends downward from the end of static random access memory (SRAM).
+
+> Note
+>
+> The IDLE stack is usually located after the `.bss` segment, and its size is specified by `CONFIG_IDLETHREAD_STACKSIZE`, followed by the heap.
+
+#### Interrupt stack configuration
+
+- Manufacturers can set the interrupt stack size through the configuration item `CONFIG_ARCH_INTERRUPTSTACK`.
+- The interrupt stack space is defined by the global variable `g_intstackalloc`.
+- Each architecture calls `up_get_intstackbase` through the corresponding initialization function (such as `arm_initialize_stack`) to obtain the bottom address of the interrupt stack, and calculates the top of the stack according to `CONFIG_ARCH_INTERRUPTSTACK`.
+
+#### Heap management
+
+- openvela supports multiple independent heap management. The same heap can contain multiple non-contiguous physical memory areas.
+- The system, driver and application apply for heap memory through `kmm_malloc` or the standard `malloc` API.
+- Reference code location: [stm32_allocateheap.c](https://github.com/open-vela/nuttx/blob/41545a4ca98165813908e5fe25d3ecdbfc5ab19a/arch/arm/src/stm32f7/stm32_allocateheap.c).
+
+#### Heap size calculation
+
+Usually, the remaining RAM of the system (minus `.data`, `.bss`, and IDLE stack) will be registered as the heap. Therefore, the total size of the heap will vary with the system. The starting address and size of the heap can be calculated using the following method:
+
+- Starting address: `ebss + CONFIG_IDLETHREAD_STACKSIZE`
+- Heap size: `RAM end address - starting address`
+
+### 6. Kconfig and Make.defs
+
+#### Overview
+
+Kconfig and Make.defs are two important components for building and configuring the openvela system.
+
+#### Kconfig function
+
+The Kconfig file in the chip directory is used to define chip-related configuration items, including:
+
+- Chip Model
+
+- Chip Features
+
+- Internal Module Settings
+
+For example, the [nuttx/arch/arm/src/stm32f7/Kconfig](https://github.com/open-vela/nuttx/blob/41545a4ca98165813908e5fe25d3ecdbfc5ab19a/arch/arm/src/stm32f7/Kconfig) file defines the relevant configuration of the STM32F7 series chips, supporting different models of flash configuration and on-chip driver configuration.
+
+The following is an example of a Kconfig configuration snippet for the STM32F7 series chip, where both `ARCH_CHIP_STM32F722RC` and `ARCH_CHIP_STM32F722RE` are options that define this chip series, but they have different flash configurations.
+
+
+```Shell
+if ARCH_CHIP_STM32F7
+
+comment "STM32 F7 Configuration Options"
 
 choice
-    prompt "QEMU Chip Selection"
-    default ARCH_CHIP_QEMU_RV32
+        prompt "STM32 F7 Chip Selection"
+        default ARCH_CHIP_STM32F746NG
+        depends on ARCH_CHIP_STM32F7
 
-config ARCH_CHIP_QEMU_RV32
-    bool "QEMU RV32"
-    select ARCH_RV32
+config ARCH_CHIP_STM32F722RC
+        bool "STM32F722RC"
+        select STM32F7_STM32F722XX
+        select STM32F7_FLASH_CONFIG_C
+        select STM32F7_IO_CONFIG_R
+        ---help---
+                STM32 F7 Cortex M7, 256 FLASH, 256K (176+16+64) Kb SRAM
 
-config ARCH_CHIP_QEMU_RV64
-    bool "QEMU RV64"
-    select ARCH_RV64
-
-endchoice
-
-config ARCH_CHIP_QEMU_RV_ISA_M
-    bool "Standard Extension for Integer Multiplication and Division"
-    default n
-    select ARCH_RV_ISA_M
-
-config ARCH_CHIP_QEMU_RV_ISA_A
-    bool "Standard Extension for Atomic Instructions"
-    default n
-    select ARCH_RV_ISA_A
-
-config ARCH_CHIP_QEMU_RV_ISA_C
-    bool "Standard Extension for Compressed Instructions"
-    default n
-    select ARCH_RV_ISA_C
-
+config ARCH_CHIP_STM32F722RE
+        bool "STM32F722RE"
+        select STM32F7_STM32F722XX
+        select STM32F7_FLASH_CONFIG_E
+        select STM32F7_IO_CONFIG_R
+        ---help---
+                STM32 F7 Cortex M7, 512 FLASH, 256K (176+16+64) Kb SRAM
+...
 endif
 ```
 
-QEMU 支持完整的 RV32GC 和 RV64GC 指令集。为了方便利用 QEMU 评估 RISC-V 指令集的性能和密度表现，这些选项被设置为可配置项。在真实芯片上，可以不增加类似的配置项。
+- The `choice` node defines the chip selection menu, through which the user can select a specific chip model.
+- Each `config` item corresponds to a specific chip model, specifying the corresponding features and resource allocation (such as flash size and IO configuration).
+- The `select` keyword is used to automatically select the corresponding configuration sub-item.
 
-### 4、添加 Makefile 配置
+The chip's on-chip drivers and various hardware-related configurations can also be defined and managed in this Kconfig file.
 
-以 `qemu-rv` 为例，`Make.defs` 文件通过 `include common/Make.defs` 引入 RISC-V 的公用源文件，然后在 `CHIP_CSRCS` 中加入本芯片相关的源文件：
+#### Make.defs Function
+
+The Make.defs file is used to manage the list of source files involved in the compilation, ensuring that the build system correctly compiles the required code. In the corresponding Make.defs file, you need to add all the source files to be compiled to ensure that the build system can correctly process the code of each module. You can refer to the [nuttx/arch/arm/src/stm32f7/Make.defs](https://github.com/open-vela/nuttx/blob/41545a4ca98165813908e5fe25d3ecdbfc5ab19a/arch/arm/src/stm32f7/Make.defs) example file.
+
+### 7. chip.h and irq.h file description
+
+- `chip.h` file
+    - There are two `chip.h` files in the `vendor/vendor_name/chip/chip_name` directory:
+        - Local `chip.h`: located in the current directory, defines macros and function declarations related to the chip.
+        - Public `chip.h`: located in `include/chip.h`, referenced by `#include <arch/chip/chip.h>`, defines architecture-related macros and functions, and is used by architecture-level common code.
+- `irq.h` file
+    - Similar structure: there are two levels: local and public.
+    - Public `include/irq.h` is responsible for architecture-wide interrupt-related definitions.
+    - Local `irq.h` defines interrupts for specific chips.
+- Reference suggestions
+    - Local files are used for chip-specific code and are referenced using relative paths.
+    - Public files are used for architecture-shared code and are referenced through standard include paths.
+- Purpose
+    - Clearly distinguish between local and public files to avoid confusion and conflicts.
+    - Ensure code modularity and unified architecture.
+
+## 4. Board-level adaptation
+
+Board-level adaptation mainly completes the following contents:
+
+- Linker Script
+- Main `Make.defs`
+- `etcramfs` build
+- Board Configs
+- Board initialization code
+
+The overall code structure is as follows:
+
+```Shell
+vendor/vendor_name/
+├── boards
+│   └── <chip_name>
+│       └── <board_name>
+│           ├── configs
+│           │   └── nsh
+│           │       └── defconfig
+│           ├── include
+│           │   ├── board.h
+│           │   └── nsh_romfsimg.h
+│           ├── Kconfig
+│           ├── scripts
+│           │   ├── ld.script
+│           │   └── Make.defs
+│           └── src
+│               ├── board_name.h
+│               ├── etc
+│               │   ├── group
+│               │   ├── init.d
+│               │   │   ├── rcS
+│               │   │   └── rc.sysinit
+│               │   └── passwd
+│               ├── Makefile
+│               ├── <vendor_name>_appinit.c
+│               ├── <vendor_name>_boot.c
+│               └── <vendor_name>_bringup.c
+```
+
+### 1. Initialization code
+
+#### Phase division
+
+- `board_early_initialize`: Executed before the idle task, early hardware initialization.
+- `board_late_initialize`: Executed in the context of the Appbringup thread, regular driver initialization.
+- `board_app_initialize`: Executed in the context of nsh task, file system and core services are initialized.
+- `board_app_finalinitialize`: Executed in the context of nsh task, application related initialization.
+
+For detailed process, please refer to [boot process](../device_dev_guide/kernal/boot_process.md). Manufacturers need to write to the corresponding function according to the time when the peripheral is initialized.
+
+#### Sample code
+
+Related files include:
+
+- `<vendor_name>_bringup.c`
+- `<vendor_name>_appinit.c`
+- `<vendor_name>_boot.c`
+
+For sample code, please refer to [nuttx/boards/arm/stm32f7/stm32f746g-disco/src/stm32_boot.c](https://github.com/open-vela/nuttx/blob/41545a4ca98165813908e5fe25d3ecdbfc5ab19a/boards/arm/stm32f7/stm32f746g-disco/src/stm32_boot.c#L99)
+
+```C
+#ifdef CONFIG_BOARD_EARLY_INITIALIZE
+void board_early_initialize(void)
+{
+
+}
+#endif
+
+#ifdef CONFIG_BOARD_LATE_INITIALIZE
+void board_late_initialize(void)
+{
+
+}
+
+int board_app_initialize(uintptr_t arg)
+{
+
+}
+
+#ifdef CONFIG_BOARDCTL_FINALINIT
+int board_app_finalinitialize(uintptr_t arg)
+{
+
+}
+#endif
+```
+
+### 2. ETCROMFS build
+
+- Function description: The root file system is stored in Flash as a read-only file system (ROMFS).
+
+- Purpose: Store sensitive files such as application configuration files and keys.
+
+- Steps to add files:
+
+    - Add the target file path through `RCRAWS` in `Make.defs`.
+
+    - Trigger incremental compilation after deleting the `etctmp` directory.
+    - After booting, the files are accessible via the `/etc/` path.
+
+##### Example `Make.defs` configuration
 
 ```Makefile
-include common/Make.defs
+ifeq ($(CONFIG_ETC_ROMFS),y)
+RCSRCS += etc/init.d/rc.sysinit etc/init.d/rcS
+RCRAWS += etc/group etc/passwd
+RCRAWS += etc/build.prop
+RCRAWS += etc/txtable.txt
 
-# Specify our HEAD assembly file.  This will be linked as
-# the first object file, so it will appear at address 0
-HEAD_ASRC = qemu_rv_head.S
-
-# Specify our C code within this directory to be included
-CHIP_CSRCS  = qemu_rv_start.c qemu_rv_irq_dispatch.c qemu_rv_irq.c
-CHIP_CSRCS += qemu_rv_timerisr.c qemu_rv_allocateheap.c
-
-ifeq ($(CONFIG_BUILD_KERNEL),y)
-CHIP_CSRCS += qemu_rv_mm_init.c
+ifneq ($(CONFIG_UTILS_AVB_VERIFY)$(CONFIG_UTILS_ZIP_VERIFY),)
+RCRAWS += etc/key.avb
 endif
 
-ifeq ($(CONFIG_MM_PGALLOC),y)
-CHIP_CSRCS += qemu_rv_pgalloc.c
+ifeq ($(CONFIG_ATS3085X_BOOTLOADER),y)
+RCRAWS += etc/factory.sh
 endif
+
 ```
 
-## 四、Board 适配
+### 3. Linker script
 
-### 1、目录结构
+Each board can be configured with a custom linker script, which is specified in `board/Make.defs` by the `LDSCRIPT` keyword. The general linker script is stored in the following path: `vendor/vendor_name/boards/chip_name/board_name/scripts`
 
-`/boards` 子目录包含每个开发板的自定义逻辑和板级配置数据，主要由以下内容构成：
+For example: [nuttx//boards/arm/stm32f7/stm32f746g-disco/scripts/flash.ld](https://github.com/open-vela/nuttx/blob/41545a4ca98165813908e5fe25d3ecdbfc5ab19a/boards/arm/stm32f7/stm32f746g-disco/scripts/flash.ld)
 
-- include：包含板级的头文件，在编译时会链接为 `include/arch/board` 目录。
-- src：包含板级驱动程序，在编译时会链接为 `arch/<arch-name>/src/board` 目录。
-- src/Makefile：板级驱动的 Makefile 文件，必须包含以下三个目标：`libext$(LIBEXT)`、`clean` 和 `distclean`。
-- scripts：包含开发板的链接脚本。
-- scripts/Make.defs：Makefile 的片段文件，包含编译工具的相关配置。
-- configs/xxx/defconfig：类似于 Linux 的配置文件，指示开发板的配置。
+The requirements for the linker script include:
 
-以下以 `nuttx/boards/risc-v/qemu-rv` 为例，展示基于 `qemu-rv` 芯片的开发板目录结构及包含文件：
+- Set ENTRY to `_vectors` to support global vector table.
+- If backtrace is supported, add `.arm.exidx` section. See [Backtrace](../device_dev_guide/debugging/memory/offline/backtrace.md) for more details.
 
-```Bash
-nuttx/boards/risc-v/qemu-rv
-                        └── rv-virt
-                            ├── configs               # 该目录用于存放不同应用的配置文件
-                            │   ├── knsh64
-                            │   │   └── defconfig
-                            │   ├── nsh
-                            │   │   └── defconfig
-                            │   ├── nsh64
-                            │   │   └── defconfig
-                            │   ├── smp
-                            │   │   └── defconfig
-                            │   └── smp64
-                            │       └── defconfig
-                            ├── include               # 该目录用于存放开发板对外导出的接口和定义
-                            │   ├── board.h
-                            │   ├── board_memorymap.h
-                            │   └── nsh_romfsimg.h
-                            ├── Kconfig               # 描述该开发板可用的配置项
-                            ├── README.txt
-                            ├── scripts               # 该目录用于存放该开发板的连接脚本和Makefile
-                            │   ├── ld-kernel.script
-                            │   ├── ld.script
-                            │   └── Make.defs
-                            └── src                   # 源码目录
-                                ├── etc               # 该开发板需要用到的资源文件
-                                │   └── init.d
-                                │       └── rcS
-                                ├── Makefile
-                                └── qemu_rv_appinit.c
+Linker script example:
+```Makefile
+MEMORY
+{                                                                                       
+  flash (rx) : ORIGIN = 0x10000000, LENGTH = 2560K                                      
+  sram (rwx) : ORIGIN = 0x01000400, LENGTH = 111K                                       
+  psram (rwx) : ORIGIN = 0x18000000, LENGTH = 4M                                        
+  dsp_inner_ram (rwx) : ORIGIN = 0x01054000, LENGTH = 16K                           
+  share_ram (rwx) : ORIGIN = 0x0106A600, LENGTH = 22K                                   
+}        
+                                                                               
+OUTPUT_ARCH(arm)                                                                        
+EXTERN(_vectors)                                                                        
+ENTRY(_stext)                                                                           
+SECTIONS                                                                                {                                                                                       
+    .text : {                                                                           
+        . = 0x200;                                                                      
+        _stext = ABSOLUTE(.);                                                           
+        *(.vectors)                                                                     
+        *(.text .text.*)                                                                
+        *(.fixup)                                                                       
+        *(.gnu.warning)                                                                 
+        *(.rodata .rodata.*)                                                            
+        *(.gnu.linkonce.t.*)                                                            
+        *(.glue_7)                                                                      
+        *(.glue_7t)                                                                     
+        *(.got)                                                                         
+        *(.gcc_except_table)                                                            
+        *(.gnu.linkonce.r.*)                                                            
+        _etext = ABSOLUTE(.);                                                         
+    } > flash    
+}
 ```
 
-### 2、实现API
 
-Board 的接口定义在头文件 `include/nuttx/board.h` 中，用户可根据具体需求使能并实现相应的 API。例如，`qemu-rv` 仅实现了 `board_app_initialize` 接口。
+### 4. Configuration files
 
-API 具体说明可参考 [APIs Exported by Board-Specific Logic to NuttX](https://nuttx.apache.org/docs/latest/reference/os/board.html) 和 [boardctl](https://nuttx.apache.org/docs/latest/reference/user/13_boardctl.html?highlight=boardctl#c.boardctl)。
+Each board can contain multiple configuration files (config files), usually configured to start the system with `nsh`, which only has basic functions. The configuration location is: `vendor/vendor_name/boards/chip_name/board_name/configs/nsh`.
 
-### 3、添加 Makefile 和链接脚本
+For example: [nuttx/boards/arm/stm32f7/stm32f746g-disco/configs](https://github.com/open-vela/nuttx/tree/41545a4ca98165813908e5fe25d3ecdbfc5ab19a/boards/arm/stm32f7/stm32f746g-disco/configs)
 
-#### Makefile 配置
+> Note
+>
+> openvela recommends not adding too many configuration files to reduce maintenance burden.
 
-以 `qemu-rv` 为例，`Makefile` 文件指定了需要编译的板级源文件以及资源文件：
+### 5. Kconfig, Makefile and Make.defs
+
+- Kconfig: defines the configuration items of board peripherals, including peripheral drivers and board-level configuration. See the [Kconfig](https://github.com/open-vela/nuttx/blob/41545a4ca98165813908e5fe25d3ecdbfc5ab19a/boards/arm/stm32f7/stm32f746g-disco/Kconfig) example for more details.
+
+- Makefile: Adds source files that need to be compiled to the build and eventually generates `libboard.a`. See the [Makefile](https://github.com/open-vela/nuttx/blob/41545a4ca98165813908e5fe25d3ecdbfc5ab19a/boards/arm/stm32f7/stm32f746g-disco/src/Make.defs) example for more details.
+
+- scripts/Make.defs: top-level build configuration, including system configuration `.config`, `Toolchain.defs`, link scripts, and external library references. For details, see the [Make.defs](https://github.com/open-vela/nuttx/blob/41545a4ca98165813908e5fe25d3ecdbfc5ab19a/boards/arm/stm32f7/stm32f746g-disco/scripts/Make.defs) example.
+
+Example Make.defs snippet: 
+
+```Makefile 
+
+include $(TOPDIR)/.config 
+include $(TOPDIR)/tools/Config.mk 
+include $(TOPDIR)/arch/arm/src/armv7-m/Toolchain.defs 
+
+LDSCRIPT = ld.script 
+
+ARCHSCRIPT += $(BOARD_DIR)$(DELIM)scripts$(DELIM)$(LDSCRIPT) 
+
+CFLAGS := $(ARCHCFLAGS) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRAFLAGS) -pipe 
+CPICFLAGS = $(ARCHPICFLAGS) $(CFLAGS) 
+CXXFLAGS := $(ARCHCXXFLAGS) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHXXINCLUDES) $(ARCHDEFINES) $(EXTRAFLAGS) -pipe 
+CXXPICFLAGS = $(ARCHPICFLAGS) $(CXXFLAGS) 
+CPPFLAGS := $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRAFLAGS) 
+AFLAGS := $(CFLAGS) -D__ASSEMBLY__ 
+
+EXTRA_LIBS += $(wildcard $(shell readlink -f $(TOPDIR)/$(CONFIG_ARCH_BOARD_CUSTOM_DIR)/libs/$(CONFIG_ARCH_BOARD_CUSTOM_NAME))/*.a) 
+EXTRA_LIBS += $(wildcard $(shell readlink -f $(TOPDIR)/$(CONFIG_ARCH_BOARD_CUSTOM_DIR)/libmedia/*.a)) 
+```
+
+### 6. board.h and nsh_romfsimg.h
+
+- `board.h`: Mainly used to define macros or function declarations related to peripheral drivers and board-level configuration, introduced through `<arch/board/board.h>`. Please refer to [nuttx/boards/arm/stm32f7/stm32f746g-disco/include/board.h](https://github.com/open-vela/nuttx/blob/41545a4ca98165813908e5fe25d3ecdbfc5ab19a/boards/arm/stm32f7/stm32f746g-disco/include/board.h) for examples.
+- `nsh_romfsimg.h`: Automatically generated root file system content, manual modification is not recommended.
+
+### 7. Toolchain
+
+Vendors can import custom toolchains, usually stored in `vendor/vendor_name/prebuilt`. The compiler, linker tool path, etc. can be configured through `board/scripts/Make.defs`.
+
+
+
+## 5. Build and run
+
+openvela supports two compilation methods: CMake and Make.
+
+It is recommended to use the following CMake command for building:
 
 ```Makefile
-include $(TOPDIR)/Make.defs
-
-RCSRCS = etc/init.d/rc.sysinit etc/init.d/rcS
-
-CSRCS = qemu_rv_appinit.c
-
-include $(TOPDIR)/boards/Board.mk
+./build.sh vendor/vendor_name/board/chip_name/configs/nsh --cmake -j8
 ```
 
-#### Make.defs 配置
+After executing the above command, the `vela_ap.bin` file will be generated, and the manufacturer can use the corresponding burning method for operation verification.
 
-`Make.defs` 文件指定了链接脚本以及编译相关配置：
+## 6. Test verification
 
-```Makefile
-include $(TOPDIR)/.config
-include $(TOPDIR)/tools/Config.mk
-include $(TOPDIR)/arch/risc-v/src/common/Toolchain.defs
+After the manufacturer completes the adaptation, it needs to be tested through the access test, which mainly includes the following aspects:
 
-ifeq ($(CONFIG_ARCH_CHIP_QEMU_RV),y)
-ifeq ($(CONFIG_BUILD_KERNEL),y)
-  LDSCRIPT = ld-kernel.script
-else
-  LDSCRIPT = ld.script
-endif
-endif
-
-ARCHSCRIPT += $(BOARD_DIR)$(DELIM)scripts$(DELIM)$(LDSCRIPT)
-
-ARCHCPUFLAGS += -mcmodel=medany
-ARCHPICFLAGS = -fpic -msingle-pic-base
-
-CFLAGS := $(ARCHCFLAGS) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRAFLAGS) -pipe
-CPICFLAGS = $(ARCHPICFLAGS) $(CFLAGS)
-CXXFLAGS := $(ARCHCXXFLAGS) $(ARCHOPTIMIZATION) $(ARCHCPUFLAGS) $(ARCHXXINCLUDES) $(ARCHDEFINES) $(EXTRAFLAGS) -pipe
-CXXPICFLAGS = $(ARCHPICFLAGS) $(CXXFLAGS)
-CPPFLAGS := $(ARCHINCLUDES) $(ARCHDEFINES) $(EXTRAFLAGS)
-AFLAGS += $(CFLAGS) -D__ASSEMBLY__
-
-# ELF module definitions
-
-CELFFLAGS = $(CFLAGS)
-CXXELFFLAGS = $(CXXFLAGS)
-
-ifeq ($(CONFIG_ARCH_RV32),y)
-  LDELFFLAGS = --oformat elf32-littleriscv
-else
-  LDELFFLAGS = --oformat elf64-littleriscv
-endif
-
-LDELFFLAGS += -r -e main
-LDELFFLAGS += -T $(call CONVERT_PATH,$(TOPDIR)/binfmt/libelf/gnu-elf.ld)
-```
-
-### 4、添加 defconfig
-
-在 `configs` 目录下新建 `config` 文件夹，并创建初始的 `defconfig` 文件。根据需求使能相应的配置。
+- Functional test
+- Stability test
+- Performance test

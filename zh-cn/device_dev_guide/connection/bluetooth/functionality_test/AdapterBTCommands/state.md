@@ -1,4 +1,6 @@
-# 蓝牙适配器 state 子命令
+# state 子命令
+
+\[ [English](../../../../../../en/device_dev_guide/connection/bluetooth/functionality_test/AdapterBTCommands/state.md) | 简体中文 \]
 
 ## 一、简介
 
